@@ -1,0 +1,23 @@
+<Project>
+  <!--<PropertyGroup>    
+    <MauiVersion>11.0.0-rc.1.26451.6</MauiVersion>    
+  </PropertyGroup>-->
+  <ItemGroup>
+    <PackageVersion Include="Avalonia.Controls.Maui.Essentials" Version="11.0.0-rc.1.26252.343" />
+    <!--<PackageVersion Include="Microsoft.Maui.Essentials" Version="$(MauiVersion)" />-->
+    <PackageVersion Include="WindowsContracts.Net.Foundation.UniversalApiContract" Version="5.19041.10" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageVersion Include="Microsoft.Maui.Platforms.MacOS.Essentials" Version="0.1.0-preview.12.26368.2" />
+    <PackageVersion Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" Version="0.1.0-preview.12.26421.1" />
+
+    <PackageVersion Include="Append.Blazor.WebShare" Version="7.0.0" />
+    <PackageVersion Include="BlazorNative.Device" Version="0.12.0" />
+    <PackageVersion Include="BlazorSensors" Version="1.0.1" />
+    <PackageVersion Include="KristofferStrube.Blazor.FileSystemAccess" Version="4.0.0" />
+    <PackageVersion Include="KristofferStrube.Blazor.MediaCaptureStreams" Version="0.4.1" />
+    <PackageVersion Include="KristofferStrube.Blazor.MediaStreamRecording" Version="0.1.0-alpha.2" />
+    <PackageVersion Include="PatrickJahr.Blazor.AsyncClipboard" Version="1.0.0" />
+    <PackageVersion Include="Toolbelt.Blazor.SpeechSynthesis" Version="11.0.0" />
+
+  </ItemGroup>
+</Project>

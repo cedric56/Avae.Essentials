@@ -1,0 +1,22 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  
+  <ItemGroup Condition="'$(UsingMicrosoftNETSdkWeb)' == 'true'">
+    <PackageReference Include="Append.Blazor.WebShare" />
+    <PackageReference Include="BlazorNative.Device" />
+    <PackageReference Include="BlazorSensors" />
+    <PackageReference Include="KristofferStrube.Blazor.FileSystemAccess" />
+    <PackageReference Include="KristofferStrube.Blazor.MediaCaptureStreams" />
+    <PackageReference Include="KristofferStrube.Blazor.MediaStreamRecording" />
+    <PackageReference Include="Microsoft.Maui.Essentials" />
+    <PackageReference Include="PatrickJahr.Blazor.AsyncClipboard" />
+    <PackageReference Include="Toolbelt.Blazor.SpeechSynthesis" />
+  </ItemGroup>
+  
+  <Target Name="AvaeDetectWebProject" BeforeTargets="CoreCompile">
+    <ItemGroup Condition="'$(UsingMicrosoftNETSdkWeb)' == 'true'">
+      <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Blazor\*.cs" />
+    </ItemGroup>    
+  </Target>
+
+</Project>

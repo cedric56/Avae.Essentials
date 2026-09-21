@@ -1,0 +1,91 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>
+      net11.0;
+      net11.0-browser1.0;
+      net11.0-ios26.5;
+      net11.0-android37.0;
+      net11.0-macos26.5;
+      net11.0-windows10.0.19041
+    </TargetFrameworks>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsLinuxOS>$([MSBuild]::IsOSPlatform('linux'))"</IsLinuxOS>
+    <IsWindowsOS>$([MSBuild]::IsOSPlatform('Windows'))</IsWindowsOS>
+    <IsAndroidTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-android'))</IsAndroidTFM>
+    <IsIosTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-ios'))</IsIosTFM>
+    <IsMacTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-macos'))</IsMacTFM>
+    <IsBrowserTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-browser'))</IsBrowserTFM>
+    <IsWindowsTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-windows'))</IsWindowsTFM>
+    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
+    <IsAotCompatible>true</IsAotCompatible>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Version>1.0.0-preview.1</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SupportedOSPlatformVersion Condition="'$(IsAndroidTFM)' == 'true'">24</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <!-- Conditionally define the symbols -->
+  <PropertyGroup>
+    <DefineConstants Condition="'$(IsWindowsOS)' == 'true'">$(DefineConstants);WINDOWS_OS</DefineConstants>
+    <DefineConstants Condition="'$(IsLinuxOS)' == 'true'">$(DefineConstants);LINUX_OS</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="build\**"
+        Pack="true"
+        PackagePath="buildTransitive\" />
+    <Compile Remove="Blazor\*.cs" />
+    <TfmSpecificPackageFile Include="Blazor\*.cs">
+      <PackagePath>lib\$(TargetFramework)\Blazor\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </TfmSpecificPackageFile>
+    <!--<TfmSpecificPackageFile Include="build\**">
+      <PackagePath>lib\$(TargetFramework)\Avae.Essentials\build\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </TfmSpecificPackageFile>-->
+  </ItemGroup>
+
+  <!-- Start clean -->
+  <ItemGroup>
+    <Compile Remove="**\*.browser.cs" />
+    <Compile Remove="**\*.windows.cs" />
+    <Compile Remove="**\*.desktop.cs" />
+  </ItemGroup>
+
+  <!-- Windows -->
+  <ItemGroup Condition="'$(IsWindowsOS)' == 'true' AND '$(IsBrowserTFM)' != 'true' AND '$(IsMacTFM)' != 'true' AND '$(IsAndroidTFM)' != 'true' AND '$(IsIosTFM)' != 'true' AND '$(IsLinuxOS)' != 'true' AND '$(IsWindowsTFM)' != 'true'">
+    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" PrivateAssets="compile" />
+    <Compile Include="**\*.windows.cs" />
+    <Compile Include="**\*.desktop.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsWindowsTFM)' == 'true'">
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <Compile Include="**\*.windows.cs" />
+    <Compile Include="**\*.desktop.cs" />
+  </ItemGroup>
+
+  <!-- Browser -->
+  <ItemGroup Condition="'$(IsBrowserTFM)' == 'true'">
+    <Compile Include="**\*.browser.cs" />
+  </ItemGroup>
+
+  <!-- macOS -->
+  <ItemGroup Condition="'$(IsMacTFM)' == 'true'">
+    <PackageReference Include="Microsoft.Maui.Platforms.MacOS.Essentials" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsLinuxOS)' == 'true'">
+    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Controls.Maui.Essentials"/>
+  </ItemGroup>
+</Project>
