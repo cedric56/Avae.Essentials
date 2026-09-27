@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFrameworks>
       net11.0;
-      net11.0-browser1.0;
-      net11.0-ios26.5;
-      net11.0-android37.0;
-      net11.0-macos26.5;
+      net11.0-browser;
+      net11.0-ios;
+      net11.0-android;
+      net11.0-macos;
       net11.0-windows10.0.19041
     </TargetFrameworks>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
