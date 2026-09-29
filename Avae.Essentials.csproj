@@ -23,7 +23,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>1.0.0-preview.1</Version>
+    <Version>1.0.0-preview.3</Version>
     <AvaloniaNameGeneratorIsEnabled>false</AvaloniaNameGeneratorIsEnabled>
   </PropertyGroup>
 
@@ -38,18 +38,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="build\**" Pack="true" PackagePath="buildTransitive\" />
-    <Compile Remove="Blazor\*.cs" />
-    <TfmSpecificPackageFile Include="Blazor\*.cs">
+    <None Include="build\Avae.Essentials.targets" Pack="true" PackagePath="buildTransitive\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Blazor\**\*.*" />
+    <TfmSpecificPackageFile Include="Blazor\**\*.*">
       <PackagePath>lib\$(TargetFramework)\Blazor\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </TfmSpecificPackageFile>
-    <!--<TfmSpecificPackageFile Include="build\**">
-      <PackagePath>lib\$(TargetFramework)\Avae.Essentials\build\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
-    </TfmSpecificPackageFile>-->
   </ItemGroup>
-
+  
   <!-- Start clean -->
   <ItemGroup>
     <Compile Remove="**\*.browser.cs" />
@@ -86,7 +85,7 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia.Controls.Maui.Essentials" />
-    <!--<PackageReference Include="Avalonia.Markup.Xaml.Loader" />-->
-    <!--<PackageReference Include="Microsoft.Maui.Essentials" />-->
+    <PackageReference Include="Microsoft.JSInterop" />
   </ItemGroup>
+
 </Project>
