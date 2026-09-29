@@ -11,326 +11,57 @@ using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Media;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
-using System;
-using static Avae.Essentials.Extensions;
 
 namespace Avae.Essentials;
 
-internal static class BlazorExtensions
+public static class BlazorExtensions
 {
-    public static void UseBlazorEssentials(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
-    {        
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IAccelerometer), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var accelerometer = new BrowserAccelerometer(provider.GetRequiredService<IJSRuntime>());
-            return accelerometer;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IAppActions), provider =>
-        {
-            var appActions = new BrowserAppActions();
-            return appActions;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IAppInfo), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var appInfo = new BrowserAppInfo();
-            _ = appInfo.InitializeAsync(provider.GetRequiredService<IJSRuntime>());
-            return appInfo;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IBarometer), provider =>
-        {
-            var barometer = new BrowserBarometer();
-            return barometer;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IBattery), provider =>
-        {
-            var battery = new BrowserBattery();
-            return battery;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IBrowser), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var browser = new BrowserBrowser(provider.GetRequiredService<IJSRuntime>());
-            return browser;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IClipboard), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var clipboard = new BrowserClipboard(provider.GetRequiredService<IJSRuntime>());
-            return clipboard;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(ICompass), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var compass = new BrowserCompass(provider.GetRequiredService<IJSRuntime>());
-            return compass;
-        }, lifetime));
-
-        //services.TryAdd(ServiceDescriptor.Describe(typeof(IConnectivity), provider =>
-        //{
-        //    var injected = CircuitServiceAccessor.Provider;
-        //    if (injected != null)
-        //        provider = injected;
-        //    var connectivity = new BlazorConnectivity(provider.GetRequiredService<IJSRuntime>());
-        //    return connectivity;
-        //}, lifetime));
-
-        services.AddBrowserConnectivity(lifetime);
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IDeviceDisplay), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var display = new BrowserDeviceDisplay(provider.GetRequiredService<IJSRuntime>());
-            return display;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IDeviceInfo), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var deviceInfo = new BrowserDeviceInfo(provider.GetRequiredService<IJSRuntime>());
-            return deviceInfo;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IEmail), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var email = new BrowserEmail(provider.GetRequiredService<IJSRuntime>());
-            return email;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IFilePicker), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var filePicker = new BrowserFilePicker(provider.GetRequiredService<IJSRuntime>());
-            return filePicker;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IFileSystem), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var fileSystem = new BrowserFileSystem(provider.GetRequiredService<IJSRuntime>());
-            return fileSystem;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IFlashlight), provider =>
-        {
-            var flashlight = new BrowserFlashlight();
-            return flashlight;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IGeocoding), provider =>
-        {
-            var geocoding = new BrowserGeocoding();
-            return geocoding;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IGeolocation), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var geolocation = new BrowserGeolocation(provider.GetRequiredService<IJSRuntime>());
-            return geolocation;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IGyroscope), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var gyroscope = new BrowserGyroscope(provider.GetRequiredService<IJSRuntime>());
-            return gyroscope;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IHapticFeedback), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var haptic = new BrowserHapticFeedback(provider.GetRequiredService<IJSRuntime>());
-            return haptic;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(ILauncher), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var launcher = new BrowserLauncher(provider.GetRequiredService<IJSRuntime>());
-            return launcher;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IMagnetometer), provider =>
-        {
-            var magnetometer = new BrowserMagnetometer();
-            return magnetometer;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IMap), provider =>
-        {
-            var map = new BrowserMap();
-            return map;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IMediaPicker), provider =>
-        {
-            var mediaPicker = new BrowserMediaPicker();
-            return mediaPicker;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IOrientationSensor), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var orientation = new BrowserOrientationSensor(provider.GetRequiredService<IJSRuntime>());
-            return orientation;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IPhoneDialer), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var dialer = new BrowserPhoneDialer(provider.GetRequiredService<IJSRuntime>());
-            return dialer;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IPreferences), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var prefs = new BrowserPreferences(provider.GetRequiredService<IJSRuntime>());
-            return prefs;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IScreenshot), provider =>
-        {
-            var screenshot = new BrowserScreenshot();
-            return screenshot;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(ISecureStorage), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var storage = new BrowserSecureStorage(provider.GetRequiredService<IJSRuntime>());
-            return storage;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(ISemanticScreenReader), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var reader = new BrowserSemanticScreenReader(provider.GetRequiredService<IJSRuntime>());
-            return reader;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IShare), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var share = new BrowserShare(provider.GetRequiredService<IJSRuntime>());
-            return share;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(ISms), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var sms = new BrowserSms(provider.GetRequiredService<IJSRuntime>());
-            return sms;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(ITextToSpeech), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var tts = new BrowserTextToSpeech(provider.GetRequiredService<IJSRuntime>());
-            return tts;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IVibration), provider =>
-        {
-            var injected = CircuitServiceAccessor.Provider;
-            if (injected != null)
-                provider = injected;
-            var vibration = new BrowserVibration(provider.GetRequiredService<IJSRuntime>());
-            return vibration;
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IVersionTracking), provider =>
-        {
-            try
-            {
-                var injected = CircuitServiceAccessor.Provider;
-                if (injected != null)
-                    provider = injected;
-                var tracking = new BrowserVersionTracking(provider.GetRequiredService<IPreferences>(), provider.GetRequiredService<IAppInfo>());
-                return tracking;
-            }
-            catch
-            {
-                return new VersionTrackingDefault();
-            }
-        }, lifetime));
-
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IWebAuthenticator), provider =>
-        {
-            //var auth = new BrowserWebAuthenticator();
-            //_ = auth.InitializeAsync(provider.GetRequiredService<IJSRuntime>());
-            //return auth;
-            return WebAuthenticator.Default;
-        }, lifetime));
-    }
-
-    private static IServiceCollection AddBrowserConnectivity(this IServiceCollection services, ServiceLifetime lifetime)
+    public static void UseBlazorEssentials(this IServiceCollection services)
     {
-        services.TryAdd(ServiceDescriptor.Describe(typeof(BlazorConnectivity), provider =>
-        {
-                var injected = CircuitServiceAccessor.Provider;
-                if (injected != null)
-                    provider = injected;
-                var connectivity = new BlazorConnectivity(provider.GetRequiredService<IJSRuntime>());
-                return connectivity;            
-        }, lifetime));
+        var lifetime = ServiceLifetime.Singleton;
 
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IConnectivity),
-            sp => sp.GetRequiredService<BlazorConnectivity>(), lifetime));
-        return services;
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IAccelerometer), provider => new BrowserAccelerometer(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IAppActions), provider => new BlazorAppActions(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IAppInfo), provider => new BlazorAppInfo(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IBarometer), provider => new BlazorBarometer(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IBattery), provider => new BrowserBattery(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IBrowser), provider => new BlazorBrowser(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IClipboard), provider =>new BlazorClipboard(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(ICompass), provider =>new BrowserCompass(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IConnectivity), provider =>new BlazorConnectivity(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IDeviceDisplay), provider => new BrowserDeviceDisplay(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IDeviceInfo), provider =>new BrowserDeviceInfo(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IEmail), provider => new BlazorEmail(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IFilePicker), provider =>new BlazorFilePicker(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IFileSystem), provider =>new BlazorFileSystem(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IFlashlight), provider => new BlazorFlashlight(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IGeocoding), provider => new BlazorGeocoding(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IGeolocation), provider => new BrowserGeolocation(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IGyroscope), provider => new BrowserGyroscope(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IHapticFeedback), provider =>new BlazorHapticFeedback(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(ILauncher), provider => new BlazorLauncher(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IMagnetometer), provider =>new BlazorMagnetometer(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IMap), provider => new BlazorMap(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IMediaPicker), provider => new BlazorMediaPicker(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IOrientationSensor), provider => new BrowserOrientationSensor(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IPhoneDialer), provider => new BlazorPhoneDialer(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IPreferences), provider =>new BlazorPreferences(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IScreenshot), provider => new BlazorScreenshot(), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(ISecureStorage), provider => new BlazorSecureStorage(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(ISemanticScreenReader), provider => new BlazorSemanticScreenReader(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IShare), provider => new BlazorShare(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(ISms), provider => new BlazorSms(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(ITextToSpeech), provider => new BlazorTextToSpeech(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IVibration), provider => new BlazorVibration(GetRequiredProvider(provider).GetRequiredService<IJSRuntime>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IVersionTracking), provider => new BlazorVersionTracking(GetRequiredProvider(provider).GetRequiredService<IPreferences>(), provider.GetRequiredService<IAppInfo>()), lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IWebAuthenticator), provider => WebAuthenticator.Default, lifetime));
+
+        IServiceProvider GetRequiredProvider(IServiceProvider provider)
+        {
+            var injected = CircuitServiceAccessor.Provider;
+            if (injected != null)
+                provider = injected;
+            return provider;
+        }
     }
 }

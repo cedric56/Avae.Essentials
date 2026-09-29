@@ -5,7 +5,7 @@ using Microsoft.Maui.Storage;
 namespace Avae.Essentials;
 
 /// <summary>Version tracking persisted in preferences (localStorage).</summary>
-public class BrowserVersionTracking : IVersionTracking
+public class BlazorVersionTracking : IVersionTracking
 {
 	const string SharedName = "versiontracking";
 	const string VersionsKey = "VersionTracking.Versions";
@@ -18,7 +18,7 @@ public class BrowserVersionTracking : IVersionTracking
 	List<string> buildHistory = [];
 	bool tracked;
 
-	public BrowserVersionTracking(IPreferences preferences, IAppInfo appInfo)
+	public BlazorVersionTracking(IPreferences preferences, IAppInfo appInfo)
 	{
 		this.preferences = preferences;
 		this.appInfo = appInfo;

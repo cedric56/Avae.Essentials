@@ -1,8 +1,4 @@
 using Microsoft.JSInterop;
-using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.Versioning;
-using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
@@ -27,77 +23,12 @@ public static class BrowserEssentials
 
 
 
-    const string Module = BrowserEssentials.ModuleName;
-
     static IJSObjectReference ModuleRef(IJSRuntime js)
     {
         BrowserEssentials.EnsureInitialized();
         return BrowserEssentials.ReferenceModule;
     }
-
-    // ───────────────────────── Preferences (localStorage) ─────────────────────────
-    internal static string? PrefGet(IJSRuntime js, string key)
-    {
-        return _isWasm ?
-          ((IJSInProcessRuntime)js).Invoke<string?>("prefGet", key) :
-          RunSync(async () => await ModuleRef(js).InvokeAsync<string?>("prefGet", key));
-    }
-    internal static void PrefSet(IJSRuntime js, string key, string value)
-    {
-        if (_isWasm)
-            ((IJSInProcessRuntime)js).InvokeVoid("prefSet", key, value);
-        else
-            RunSync(async () => await ModuleRef(js).InvokeVoidAsync("prefSet", key, value));
-    }
-    internal static void PrefRemove(IJSRuntime js, string key)
-    {
-        if (_isWasm)
-            ((IJSInProcessRuntime)js).InvokeVoid("prefRemove", key);
-        else
-            RunSync(async () => await ModuleRef(js).InvokeVoidAsync("prefRemove", key));
-    }
-    internal static string[] PrefKeys(IJSRuntime js, string prefix)
-    {
-        return _isWasm ?
-          ((IJSInProcessRuntime)js).Invoke<string[]>("prefKeys", prefix) :
-          RunSync(async () => await ModuleRef(js).InvokeAsync<string[]>("prefKeys", prefix));
-    }
-    // ───────────────────────── Secure storage ─────────────────────────
-    internal static async Task SecureSetAsync(IJSRuntime js, string key, string value) =>
-        await ModuleRef(js).InvokeVoidAsync("secureSet", key, value);
-
-    internal static async Task<string?> SecureGetAsync(IJSRuntime js, string key) =>
-        await ModuleRef(js).InvokeAsync<string?>("secureGet", key);
-
-    // ───────────────────────── Clipboard ─────────────────────────
-    internal static async Task ClipboardWriteTextAsync(IJSRuntime js, string text) =>
-        await ModuleRef(js).InvokeVoidAsync("clipboardWriteText", text);
-
-    internal static async Task<string> ClipboardReadTextAsync(IJSRuntime js) =>
-        await ModuleRef(js).InvokeAsync<string>("clipboardReadText");
-
-    // ───────────────────────── Connectivity ─────────────────────────
-    internal static bool IsOnline(IJSRuntime js)
-    {
-        if (ReferenceModule is IJSInProcessObjectReference sync)
-            return sync.Invoke<bool>("isOnline");
-        return RunSync(async () => await (await Modules(js)).InvokeAsync<bool>("isOnline"));
-    }
-
-    internal static string GetConnectionType(IJSRuntime js)
-    {
-        if (ReferenceModule is IJSInProcessObjectReference sync)
-            return sync.Invoke<string>("getConnectionType");
-        return RunSync(async () => await (await Modules(js)).InvokeAsync<string>("getConnectionType"));
-    }
-
-    // Callbacks require a DotNetObjectReference — see the callbacks section below
-    internal static async Task WatchConnectivityAsync(
-        IJSRuntime js,
-        DotNetObjectReference<ConnectivityCallback> callbackRef) =>
-        await ModuleRef(js).InvokeVoidAsync("watchConnectivity", callbackRef);
-
-    // ───────────────────────── Device info ─────────────────────────
+// ───────────────────────── Device info ─────────────────────────
     internal static string GetDeviceInfo(IJSRuntime js) =>
             _isWasm ?
         ((IJSInProcessRuntime)js).Invoke<string>("getDeviceInfo") :
@@ -122,14 +53,6 @@ public static class BrowserEssentials
         _isWasm ?
         ((IJSInProcessRuntime)js).Invoke<bool>("getWakeLock") :
         RunSync(async () => await ModuleRef(js).InvokeAsync<bool>("getWakeLock"));
-    
-    // ───────────────────────── App info / theme ─────────────────────────
-    internal static async Task<string> GetAppInfoAsync(IJSRuntime js) =>
-        await ModuleRef(js).InvokeAsync<string>("getAppInfo");
-
-    internal static async Task<bool> PrefersDarkAsync(IJSRuntime js) =>
-        await ModuleRef(js).InvokeAsync<bool>("prefersDark");
-
     // ───────────────────────── Geolocation ─────────────────────────
     internal static async Task<string> GeoGetCurrentPositionAsync(
         IJSRuntime js, bool enableHighAccuracy, double timeoutMs) =>
@@ -152,74 +75,6 @@ public static class BrowserEssentials
         DotNetObjectReference<BatteryCallback> callbackRef) =>
         await ModuleRef(js).InvokeAsync<string?>("batteryStart", callbackRef);
 
-    // ───────────────────────── Vibration ─────────────────────────
-    internal static bool VibrationIsSupported(IJSRuntime js) =>
-               _isWasm ?
-        ((IJSInProcessRuntime)js).Invoke<bool>("vibrationIsSupported") :
-        RunSync(async () => await ModuleRef(js).InvokeAsync<bool>("vibrationIsSupported"));
-
-
-    internal static async Task VibrateAsync(IJSRuntime js, double durationMs) =>
-        await ModuleRef(js).InvokeVoidAsync("vibrate", durationMs);
-
-    // ───────────────────────── Share ─────────────────────────
-    internal static bool ShareIsSupported(IJSRuntime js) =>
-                   _isWasm ?
-        ((IJSInProcessRuntime)js).Invoke<bool>("shareIsSupported") :
-        RunSync(async () => await ModuleRef(js).InvokeAsync<bool>("shareIsSupported"));
-
-
-    internal static async Task ShareAsync(
-        IJSRuntime js, string? title, string? text, string? url) =>
-        await ModuleRef(js).InvokeVoidAsync("share", title, text, url);
-
-    internal static async Task ShareFilesAsync(
-        IJSRuntime js,
-        string? title,
-        string namesJson,
-        string typesJson,
-        string base64Json) =>
-        await ModuleRef(js).InvokeVoidAsync(
-            "shareFiles", title, namesJson, typesJson, base64Json);
-
-    // ───────────────────────── Launcher / browser ─────────────────────────
-    internal static async Task<bool> OpenUrlAsync(IJSRuntime js, string url) =>
-        await ModuleRef(js).InvokeAsync<bool>("openUrl", url);
-
-    internal static async Task<bool> NavigateToAsync(IJSRuntime js, string url) =>
-        await ModuleRef(js).InvokeAsync<bool>("navigateTo", url);
-
-    internal static async Task<bool> OpenFileBlobAsync(
-        IJSRuntime js, string base64, string? contentType, string name) =>
-        await ModuleRef(js).InvokeAsync<bool>(
-            "openFileBlob", base64, contentType, name);
-
-    // ───────────────────────── File picker ─────────────────────────
-    internal static async Task<string> PickFilesAsync(
-        IJSRuntime js, string? accept, bool multiple) =>
-        await ModuleRef(js).InvokeAsync<string>("pickFiles", accept, multiple);
-
-    // ───────────────────────── Text to speech ─────────────────────────
-    internal static async Task<string> SpeechGetVoicesAsync(IJSRuntime js) =>
-        await ModuleRef(js).InvokeAsync<string>("speechGetVoices");
-
-    internal static async Task SpeakAsync(
-        IJSRuntime js,
-        string text,
-        string? lang,
-        double pitch,
-        double rate,
-        double volume) =>
-        await ModuleRef(js).InvokeVoidAsync(
-            "speak", text, lang, pitch, rate, volume);
-
-    internal static void SpeechCancel(IJSRuntime js)
-    {
-        if (_isWasm)
-            ((IJSInProcessRuntime)js).InvokeVoid("speechCancel");
-        else
-            RunSync(async () => await ModuleRef(js).InvokeVoidAsync("speechCancel"));
-    }
     // ───────────────────────── Sensors ─────────────────────────
     internal static bool SensorIsSupported(
         IJSRuntime js, string kind) =>
@@ -237,21 +92,6 @@ public static class BrowserEssentials
     internal static async Task SensorStopAsync(IJSRuntime js, string kind) =>
         await ModuleRef(js).InvokeVoidAsync("sensorStop", kind);
 
-    // ───────────────────────── App package files ─────────────────────────
-    internal static async Task<string?> FetchAppFileAsync(
-        IJSRuntime js, string path) =>
-        await ModuleRef(js).InvokeAsync<string?>("fetchAppFile", path);
-
-    internal static async Task<bool> AppFileExistsAsync(
-        IJSRuntime js, string path) =>
-        await ModuleRef(js).InvokeAsync<bool>("appFileExists", path);
-
-    // ───────────────────────── Screen reader ─────────────────────────
-    internal static async Task AnnounceAsync(IJSRuntime js, string text) =>
-        await ModuleRef(js).InvokeVoidAsync("announce", text);
-
-
-    internal const string ModuleName = "BrowserEssentials";
 
     private static Task<IJSObjectReference>? initTask;
     private static bool _isWasm;
@@ -283,25 +123,6 @@ public static class BrowserEssentials
             return initTask ??= InitializeCoreAsync(js, moduleUrl);
         }
     }
-
-    private static readonly ConditionalWeakTable<IJSRuntime, Task<IJSObjectReference>> _modules = new();
-
-    private static async Task<IJSObjectReference> Modules(IJSRuntime js)
-    {
-        try
-        {
-            return await CircuitServiceAccessor.Runtime!.InvokeAsync<IJSObjectReference>(
-                "import", "./_content/Avae.Essentials/BrowserEssentials.js");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Import failed: {ex.GetType().Name}: {ex.Message}");
-            throw;
-        }
-    }
-
-    public static void SetModules(IJSRuntime js, Task<IJSObjectReference> task)
-        => _modules.AddOrUpdate(js, task);
 
     private static async Task<IJSObjectReference> InitializeCoreAsync(
         IJSRuntime js,
@@ -351,11 +172,4 @@ public static class BrowserEssentials
                 "'await BrowserEssentials.InitializeAsync(js)' during app startup " +
                 "before using Essentials APIs.");
     }
-
-    ///// <summary>
-    ///// Awaited by asynchronous API surfaces — starts initialization on demand if the app
-    ///// did not call <see cref="InitializeAsync"/> explicitly.
-    ///// </summary>
-    //internal static Task<IJSObjectReference> WhenInitializedAsync(IJSRuntime js)
-    //    => InitializeAsync(js);
 }

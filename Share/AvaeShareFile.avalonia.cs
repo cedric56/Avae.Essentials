@@ -4,7 +4,7 @@ using Microsoft.Maui.ApplicationModel.DataTransfer;
 
 namespace Avae.Essentials;
 
-partial class AvaeShareFile : ShareFile
+public partial class AvaeShareFile : ShareFile
 {
     private IStorageFile _storageFile;
     public AvaeShareFile(AvaloniaFileResult result)
