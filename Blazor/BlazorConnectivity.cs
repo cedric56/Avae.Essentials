@@ -1,4 +1,5 @@
-﻿using Microsoft.JSInterop;
+﻿using Avae.Essentials;
+using Microsoft.JSInterop;
 using Microsoft.Maui.Networking;
 
 public sealed class BlazorConnectivity(IJSRuntime js) : IConnectivity, IAsyncDisposable
@@ -6,23 +7,25 @@ public sealed class BlazorConnectivity(IJSRuntime js) : IConnectivity, IAsyncDis
     public sealed record BrowserState(bool Online, string Type, bool SaveData);
 
     private volatile State _state = State.Unknown;
-    private IJSObjectReference? _module;
     private DotNetObjectReference<BlazorConnectivity>? _ref;
-    private Task? _init;
 
     public NetworkAccess NetworkAccess => _state.Access;
     public IEnumerable<ConnectionProfile> ConnectionProfiles => _state.Profiles;
     public event EventHandler<ConnectivityChangedEventArgs>? ConnectivityChanged;
 
     // Idempotent: safe to call from several places.
-    public Task InitializeAsync(string moduleUrl) => _init ??= InitCoreAsync(moduleUrl);
-
-    private async Task InitCoreAsync(string moduleUrl)
+    public async Task InitializeAsync()
     {
-        _module = await js.InvokeAsync<IJSObjectReference>("import", moduleUrl);
-        Apply(await _module.InvokeAsync<BrowserState>("connectivityGetSnapshot"), raise: false);
-        _ref = DotNetObjectReference.Create(this);
-        await _module.InvokeVoidAsync("connectivitySubscribe", _ref);
+        var snapshot = await BlazorEssentialsInterop.InvokeWithRetryAsync<BrowserState?>(js, "connectivityGetSnapshot");
+        if (snapshot is not null)
+            Apply(snapshot, false);
+
+        _ref = (await BlazorEssentialsInterop.SubscribeWithRetryAsync(js,
+            async () => await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime),
+            await BlazorEssentials.InitializeAsync(js),
+            "connectivitySubscribe",
+            this,
+            _ref)).Reference;
     }
 
     [JSInvokable]
@@ -58,12 +61,6 @@ public sealed class BlazorConnectivity(IJSRuntime js) : IConnectivity, IAsyncDis
     public async ValueTask DisposeAsync()
     {
         _ref?.Dispose();
-        if (_module is null) return;
-        try
-        {
-            await _module.InvokeVoidAsync("connectivityUnsubscribe");
-            await _module.DisposeAsync();
-        }
-        catch (JSDisconnectedException) { /* circuit already gone */ }
+        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "connectivityUnsubscribe");
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Devices;
+using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
 
@@ -13,7 +15,6 @@ public static class BlazorEssentials
     private static Task<IJSObjectReference>? initTask;
     private static readonly object _lock = new();
 
-    /// <summary>True once <see cref="InitializeAsync"/> has completed.</summary>
     public static bool IsInitialized =>
         initTask is { IsCompletedSuccessfully: true };
 
@@ -60,10 +61,10 @@ public static class BlazorEssentials
         await InitializeAsync(js);
 
         var connectivity = (BlazorConnectivity)provider.GetRequiredService<IConnectivity>();
-        await connectivity.InitializeAsync(moduleUrl);
+        await connectivity.InitializeAsync();
 
         var appInfo = (BlazorAppInfo)provider.GetRequiredService<IAppInfo>();
-        await appInfo.InitializeAsync(moduleUrl);
+        await appInfo.InitializeAsync();
 
         var feedback = (BlazorHapticFeedback)provider.GetRequiredService<IHapticFeedback>();
         await feedback.InitializeAsync();
@@ -73,6 +74,34 @@ public static class BlazorEssentials
 
         var storage = (BlazorSecureStorage)provider.GetRequiredService<ISecureStorage>();
         await storage.InitializeAsync();
+
+        var battery = (BlazorBattery)provider.GetRequiredService<IBattery>();
+        await battery.InitializeAsync();
+
+        var info = (BlazorDeviceInfo)provider.GetRequiredService<IDeviceInfo>();
+        await info.InitializeAsync();
+
+        var vibration = (BlazorVibration)provider.GetRequiredService<IVibration>();
+        await vibration.InitializeAsync();
+
+        var display = (BlazorDeviceDisplay)provider.GetRequiredService<IDeviceDisplay>();
+        await display.InitializeAsync();
+
+        var accelerometer = (BlazorAccelerometer)provider.GetRequiredService<IAccelerometer>();
+        await accelerometer.InitializeAsync();
+
+        var gyroscope = (BlazorGyroscope)provider.GetRequiredService<IGyroscope>();
+        await gyroscope.InitializeAsync();
+
+        var compass = (BlazorCompass)provider.GetRequiredService<ICompass>();
+        await compass.InitializeAsync();
+
+        var orientation = (BlazorOrientationSensor)provider.GetRequiredService<IOrientationSensor>();
+        await orientation.InitializeAsync();
+
+        var share = (BlazorShare)provider.GetRequiredService<IShare>();
+        await share.InitializeAsync(js, moduleUrl);
+
     }
 
     internal static async Task<IJSObjectReference> InvokeCoreAsync(IJSRuntime? js)

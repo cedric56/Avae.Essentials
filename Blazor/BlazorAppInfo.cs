@@ -17,30 +17,25 @@ public sealed class BlazorAppInfo(IJSRuntime js) : IAppInfo, IAsyncDisposable
 
     private sealed record AppInfoSnapshot(string Title, string Hostname, bool Rtl, bool PrefersDark);
 
-    private IJSObjectReference? _module;
     private DotNetObjectReference<BlazorAppInfo>? _ref;
-    private Task? _init;
 
     private string _packageName = string.Empty;
     private string _name = Assembly.GetEntryAssembly()?.GetName().Name ?? "App";
     private LayoutDirection _layoutDirection = LayoutDirection.LeftToRight;
     private AppTheme _requestedTheme = AppTheme.Light;
 
-    /// <summary>
-    /// Fetches the JS-backed values once and subscribes to theme changes.
-    /// Idempotent: safe to call more than once. Must complete before any property is read.
-    /// </summary>
-    public Task InitializeAsync(string moduleUrl) => _init ??= InitCoreAsync(moduleUrl);
+    public async Task InitializeAsync()
+    {        
+        var snapshot = await BlazorEssentialsInterop.InvokeWithRetryAsync<AppInfoSnapshot>(js, "appInfoGet");
+        if (snapshot != null)
+            Apply(snapshot);
 
-    private async Task InitCoreAsync(string moduleUrl)
-    {
-        _module = await js.InvokeAsync<IJSObjectReference>("import", moduleUrl);
-
-        var snapshot = await _module.InvokeAsync<AppInfoSnapshot>("appInfoGet");
-        Apply(snapshot);
-
-        _ref = DotNetObjectReference.Create(this);
-        await _module.InvokeVoidAsync("appInfoSubscribeTheme", _ref);
+        _ref = (await BlazorEssentialsInterop.SubscribeWithRetryAsync(js,
+            async () => await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime),
+            await BlazorEssentials.InitializeAsync(js),
+            "appInfoSubscribeTheme",
+            this,
+            _ref)).Reference;
     }
 
     [JSInvokable]
@@ -75,12 +70,6 @@ public sealed class BlazorAppInfo(IJSRuntime js) : IAppInfo, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _ref?.Dispose();
-        if (_module is null) return;
-        try
-        {
-            await _module.InvokeVoidAsync("appInfoUnsubscribeTheme");
-            await _module.DisposeAsync();
-        }
-        catch (JSDisconnectedException) { /* circuit already gone */ }
+        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "appInfoUnsubscribeTheme");
     }
 }

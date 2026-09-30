@@ -18,7 +18,7 @@ public sealed class BlazorFilePicker(IJSRuntime js) : IFilePicker
 
     private sealed record PickedFile(string Name, string Type, byte[] data);
 
-    public async Task<IEnumerable<FileResult?>> PickMultipleAsync(PickOptions? options = null)
+    public async Task<IEnumerable<FileResult>?> PickMultipleAsync(PickOptions? options = null)
         => await PickCoreAsync(            
             multiple: true,
             await BlazorEssentials.InitializeAsync(js)).ConfigureAwait(false);
@@ -46,7 +46,7 @@ public sealed class BlazorFilePicker(IJSRuntime js) : IFilePicker
                     ? "application/octet-stream"
                     : file.Type;
 
-                results.Add(new BlazorFileResult(path, contentType));
+                results.Add(new BlazorFileResult(path, contentType, file.data));
             }
             return results;
         }

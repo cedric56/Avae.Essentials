@@ -1,11 +1,6 @@
 <Project>
-  <!--<PropertyGroup>    
-    <MauiVersion>11.0.0-rc.1.26451.6</MauiVersion>    
-  </PropertyGroup>-->
   <ItemGroup>
     <PackageVersion Include="Avalonia.Controls.Maui.Essentials" Version="11.0.0-rc.1.26252.343" />
-    <!--<PackageVersion Include="Microsoft.Maui.Essentials" Version="$(MauiVersion)" />-->
-    <!--<PackageVersion Include="Microsoft.Maui.Essentials" Version="11.0.0-rc.1.26451.6" />-->
     <PackageVersion Include="Microsoft.JSInterop" Version="10.0.12" />
     <PackageVersion Include="WindowsContracts.Net.Foundation.UniversalApiContract" Version="5.19041.10" />
     <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />

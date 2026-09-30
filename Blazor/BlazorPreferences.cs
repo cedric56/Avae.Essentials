@@ -8,17 +8,23 @@ namespace Avae.Essentials;
 /// <summary>
 /// Preferences backed by window.localStorage. All values are loaded into memory once via
 /// <see cref="InitializeAsync"/>, so the synchronous <see cref="IPreferences"/> surface never
-/// calls JS interop directly. Writes update the cache immediately and persist to localStorage
-/// in the background (synchronously on WebAssembly, fire-and-forget on Blazor Server).
+/// calls JS interop directly for reads. Writes update the in-memory cache immediately (so
+/// Get always reflects the latest Set/Remove within this session) and persist to localStorage
+/// in the background. A per-key semaphore serializes those background persists, so a rapid
+/// Set-then-Remove (or vice versa) on the same key can't land in localStorage out of order.
 /// </summary>
 public sealed class BlazorPreferences(IJSRuntime js) : IPreferences
 {
     private const string KeyPrefix = "maui:prefs:";
 
     private readonly ConcurrentDictionary<string, string> _cache = new();
-    
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
+
     private static string GetContainer(string? sharedName) => KeyPrefix + (sharedName ?? "_default") + ":";
     private static string GetStorageKey(string key, string? sharedName) => GetContainer(sharedName) + key;
+
+    private SemaphoreSlim GetLock(string storageKey)
+        => _locks.GetOrAdd(storageKey, _ => new SemaphoreSlim(1, 1));
 
     /// <summary>
     /// Loads all existing preference entries from localStorage into memory. Idempotent.
@@ -26,7 +32,10 @@ public sealed class BlazorPreferences(IJSRuntime js) : IPreferences
     /// </summary>
     public async Task InitializeAsync()
     {
-        var all = await BlazorEssentialsInterop.InvokeWithRetryAsync<Dictionary<string, string>>(js, "prefsGetAll", KeyPrefix);
+        var all = await BlazorEssentialsInterop
+            .InvokeWithRetryAsync<Dictionary<string, string>>(js, "prefsGetAll", KeyPrefix)
+            .ConfigureAwait(false);
+
         foreach (var (k, v) in all ?? [])
             _cache[k] = v;
     }
@@ -95,15 +104,39 @@ public sealed class BlazorPreferences(IJSRuntime js) : IPreferences
         }
     }
 
-    // ── Persistence: sync on WASM, fire-and-forget on Server ──────────────
+    // ── Persistence: fire-and-forget, but serialized per key ──────────────
 
     private async void PersistSet(string storageKey, string value)
     {
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "prefsSet", storageKey, value);
+        var gate = GetLock(storageKey);
+        await gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await BlazorEssentialsInterop
+                .InvokeVoidWithRetryAsync(js, "prefsSet", storageKey, value)
+                .ConfigureAwait(false);
+        }
+        catch (JSDisconnectedException) { }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async void PersistRemove(string storageKey)
     {
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "prefsRemove", storageKey);
+        var gate = GetLock(storageKey);
+        await gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await BlazorEssentialsInterop
+                .InvokeVoidWithRetryAsync(js, "prefsRemove", storageKey)
+                .ConfigureAwait(false);
+        }
+        catch (JSDisconnectedException) { }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

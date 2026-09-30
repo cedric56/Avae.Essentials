@@ -3,6 +3,10 @@
 // bound from C# with [JSImport]. All functions are plain ES module exports
 // with no dependencies.
 
+export function evalExpression(code) {
+	return globalThis.eval(code);
+}
+
 // ---------- Preferences (localStorage) ----------
 
 export function prefsGetAll(prefix) {
@@ -217,59 +221,78 @@ export function clipboardReadText() {
 export function getDeviceInfo() {
 	const nav = globalThis.navigator;
 	const uaData = nav.userAgentData;
-	return JSON.stringify({
+	return {
 		userAgent: nav.userAgent || '',
 		vendor: nav.vendor || '',
 		language: nav.language || '',
 		platform: (uaData && uaData.platform) || nav.platform || '',
 		mobile: uaData ? !!uaData.mobile : /Mobi|Android|iPhone|iPad/i.test(nav.userAgent || ''),
 		brands: (uaData && uaData.brands) ? uaData.brands.map(b => ({ brand: b.brand, version: b.version })) : []
-	});
+	};
 }
-
 // ---------- Display ----------
 
-export function getDisplayInfo() {
-	const screen = globalThis.screen;
-	const orientationType = (screen.orientation && screen.orientation.type) || 'landscape-primary';
-	return JSON.stringify({
-		width: screen.width,
-		height: screen.height,
-		pixelRatio: globalThis.devicePixelRatio || 1,
-		orientation: orientationType
-	});
+function ddGetInfo() {
+	const o = screen.orientation;
+	return {
+		width: window.innerWidth,
+		height: window.innerHeight,
+		pixelRatio: window.devicePixelRatio || 1,
+		orientationType: o?.type ?? ""
+	};
 }
 
-export function watchDisplay(callback) {
-	globalThis.addEventListener('resize', () => callback());
-	if (globalThis.screen.orientation)
-		globalThis.screen.orientation.addEventListener('change', () => callback());
-}
+let ddWakeLock = null;
+let ddWakeLockRequested = false;
 
-let wakeLockSentinel = null;
-
-export async function setWakeLock(enabled) {
+async function ddAcquireWakeLock() {
+	if (!("wakeLock" in navigator)) return false;
 	try {
-		if (enabled) {
-			if (!('wakeLock' in globalThis.navigator))
-				return false;
-			wakeLockSentinel = await globalThis.navigator.wakeLock.request('screen');
-			return true;
-		}
-		if (wakeLockSentinel) {
-			await wakeLockSentinel.release();
-			wakeLockSentinel = null;
-		}
+		ddWakeLock = await navigator.wakeLock.request("screen");
+		ddWakeLock.addEventListener("release", () => { ddWakeLock = null; });
 		return true;
 	} catch {
-		return false;
+		return false; // e.g. not a secure context, or document hidden
 	}
 }
 
-export function getWakeLock() {
-	return wakeLockSentinel !== null && !wakeLockSentinel.released;
+function ddReleaseWakeLock() {
+	ddWakeLock?.release();
+	ddWakeLock = null;
 }
 
+export function ddGetSnapshot() {
+	return { ...ddGetInfo(), wakeLockActive: ddWakeLock !== null };
+}
+
+export async function ddSetWakeLock(dotNetRef, on) {
+	ddWakeLockRequested = on;
+	if (on) {
+		const ok = await ddAcquireWakeLock();
+		await dotNetRef.invokeMethodAsync("OnWakeLockChanged", ok);
+	} else {
+		ddReleaseWakeLock();
+		await dotNetRef.invokeMethodAsync("OnWakeLockChanged", false);
+	}
+}
+
+export function ddSubscribe(dotNetRef) {
+	const notify = () => dotNetRef.invokeMethodAsync("OnDisplayChanged", ddGetInfo());
+	window.addEventListener("resize", notify);
+	screen.orientation?.addEventListener("change", notify);
+
+	document.addEventListener("visibilitychange", async () => {
+		// Wake locks are released by the browser when the page is hidden; re-request.
+		if (document.visibilityState === "visible" && ddWakeLockRequested && !ddWakeLock) {
+			const ok = await ddAcquireWakeLock();
+			await dotNetRef.invokeMethodAsync("OnWakeLockChanged", ok);
+		}
+	});
+}
+
+export function ddUnsubscribe() {
+	ddReleaseWakeLock();
+}
 // ---------- Geolocation ----------
 
 function positionToJson(position) {
@@ -315,23 +338,29 @@ export function geoWatchStop(watchId) {
 
 // ---------- Battery ----------
 
-function batteryToJson(battery) {
-	return JSON.stringify({
-		level: battery.level,
-		charging: battery.charging,
-		chargingTime: battery.chargingTime,
-		dischargingTime: battery.dischargingTime
-	});
+let batteryManager = null;
+
+async function batGetManager() {
+	if (!("getBattery" in navigator)) return null;
+	if (!batteryManager) batteryManager = await navigator.getBattery();
+	return batteryManager;
 }
 
-export async function batteryStart(callback) {
-	if (!globalThis.navigator.getBattery)
-		return null;
-	const battery = await globalThis.navigator.getBattery();
-	const notify = () => callback(batteryToJson(battery));
-	battery.addEventListener('levelchange', notify);
-	battery.addEventListener('chargingchange', notify);
-	return batteryToJson(battery);
+function batSnapshotOf(b) {
+	return { level: b.level, charging: b.charging };
+}
+
+export async function batGetSnapshot() {
+	const b = await batGetManager();
+	return b ? batSnapshotOf(b) : null;
+}
+
+export async function batSubscribe(dotNetRef) {
+	const b = await batGetManager();
+	if (!b) return;
+	const notify = () => dotNetRef.invokeMethodAsync("OnBatteryChanged", batSnapshotOf(b));
+	b.addEventListener("levelchange", notify);
+	b.addEventListener("chargingchange", notify);
 }
 
 // ---------- Vibration / haptics ----------

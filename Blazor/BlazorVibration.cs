@@ -18,7 +18,7 @@ public class BlazorVibration(IJSRuntime js) : IVibration
     {
         get
         {
-            BrowserEssentials.EnsureInitialized();
+            BlazorEssentials.EnsureInitialized();
             return isSupported;
         }
     }
@@ -27,7 +27,7 @@ public class BlazorVibration(IJSRuntime js) : IVibration
 
     public async void Vibrate(TimeSpan duration)
     {
-        BrowserEssentials.EnsureInitialized();
+        BlazorEssentials.EnsureInitialized();
         if (!IsSupported)
             throw new FeatureNotSupportedException("The Vibration API is not available in this browser.");
         await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "vibrate", duration.TotalMilliseconds);        
@@ -35,7 +35,7 @@ public class BlazorVibration(IJSRuntime js) : IVibration
 
     public async void Cancel()
     {
-        BrowserEssentials.EnsureInitialized();
+        BlazorEssentials.EnsureInitialized();
         if (IsSupported)
             await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "vibrate", 0);
     }

@@ -11,25 +11,31 @@ namespace Avae.Essentials;
 /// Share backed by the Web Share API (navigator.share). Requires a secure context
 /// and, in most browsers, a user gesture. File sharing uses Web Share Level 2.
 /// </summary>
-public class BlazorShare(IJSRuntime js) : IAvaeShare
+public class BlazorShare : IAvaeShare, IAsyncDisposable
 {
+    bool _isSupported;
+    public bool IsSupported => _isSupported;
+
+    private IJSObjectReference? module;
+
+    public async Task InitializeAsync(IJSRuntime js, string moduleUrl)
+    {
+        _isSupported = await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "shareIsSupported");
+        module = await js.InvokeAsync<IJSObjectReference>("import", moduleUrl);
+    }
+
     public async Task RequestAsync(ShareTextRequest request)
     {
-        if (BlazorEssentials.IsWasm)
+        if(!IsSupported)
+            throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
+
+        if (module == null)
         {
-            if (!await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "shareIsSupported"))
-                throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
-            await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(
-                BlazorEssentials.IsWasm ? js : CircuitServiceAccessor.Runtime,
-                "share", request.Title, request.Text, request.Uri).ConfigureAwait(false);
+            BlazorEssentials.EnsureInitialized();
+            return;
         }
-        else
-        {
-            if(await (await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime)).InvokeAsync<bool>("shareIsSupported").ConfigureAwait(false))
-                throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
-            await (await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime)).InvokeVoidAsync(
-                "share", request.Title, request.Text, request.Uri).ConfigureAwait(false);
-        }
+
+        await module.InvokeVoidAsync("share", request.Title, request.Text, request.Uri).ConfigureAwait(false);
     }
 
     public Task RequestAsync(ShareFileRequest request) =>
@@ -53,7 +59,7 @@ public class BlazorShare(IJSRuntime js) : IAvaeShare
                 // Wrap it with the Avalonia adapter for proper handling
                 shareFiles.Add(new AvaeShareFile(f));
             else if (file is BlazorFileResult b)
-                shareFiles.Add(new ShareFile(b.FullPath, b.ContentType));
+                shareFiles.Add(new AvaeShareFile(b));
             else
                 // Use standard MAUI ShareFile for regular files
                 shareFiles.Add(new ShareFile(file));
@@ -69,10 +75,16 @@ public class BlazorShare(IJSRuntime js) : IAvaeShare
 
     async Task ShareFilesAsync(string? title, IReadOnlyList<ShareFile> files)
     {
-        if (!await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "shareIsSupported"))
+        if (!IsSupported)
             throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
         if (files.Count == 0)
             throw new ArgumentException("No files were provided to share.");
+
+        if (module == null)
+        {
+            BlazorEssentials.EnsureInitialized();
+            return;
+        }
 
         var names = new string[files.Count];
         var types = new string[files.Count];
@@ -81,37 +93,31 @@ public class BlazorShare(IJSRuntime js) : IAvaeShare
         {
             names[i] = files[i].FileName;
             types[i] = files[i].ContentType ?? string.Empty;
-            contents[i] = Convert.ToBase64String(await File.ReadAllBytesAsync(files[i].FullPath).ConfigureAwait(false));
+            contents[i] = Convert.ToBase64String(
+                files[i] is AvaeShareFile f ? 
+                f.Data ?? await File.ReadAllBytesAsync(files[i].FullPath).ConfigureAwait(false) :                
+                await File.ReadAllBytesAsync(files[i].FullPath).ConfigureAwait(false));
         }
 
         try
         {
-            if (BlazorEssentials.IsWasm)
-            {
-                await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(
-                    js,
-                    "shareFiles",
-                    title,
-                    JsonSerializer.Serialize(names),
-                    JsonSerializer.Serialize(types),
-                    JsonSerializer.Serialize(contents)).ConfigureAwait(false);
-            }
-            else
-            {
-                await (await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime)).
-                    InvokeVoidAsync(
-                    "shareFiles",
+            await module.InvokeVoidAsync("shareFiles",
                     title,
                     JsonSerializer.Serialize(names),
                     JsonSerializer.Serialize(types),
                     JsonSerializer.Serialize(contents)).ConfigureAwait(false);
 
-            }
         }
         catch (Exception ex) when (ex.Message.Contains("unsupported", StringComparison.OrdinalIgnoreCase))
         {
             throw new FeatureNotSupportedException("This browser cannot share files via the Web Share API.");
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module != null)
+            await module.DisposeAsync();
     }
 }
 

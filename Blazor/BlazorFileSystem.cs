@@ -3,14 +3,6 @@ using Microsoft.Maui.Storage;
 
 namespace Avae.Essentials;
 
-/// <summary>
-/// File system rooted in the in-memory WebAssembly (Emscripten) VFS. Data written to
-/// <see cref="AppDataDirectory"/> and <see cref="CacheDirectory"/> does NOT persist
-/// across page reloads — use <see cref="Storage.IPreferences"/> or
-/// <see cref="Storage.ISecureStorage"/> for durable state.
-/// App package files are fetched over HTTP relative to the document base URL
-/// (in Blazor WebAssembly, files under wwwroot).
-/// </summary>
 public class BlazorFileSystem(IJSRuntime js) : IFileSystem
 {
     public string CacheDirectory => EnsureDirectory("/cache");

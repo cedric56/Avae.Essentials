@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using Microsoft.JSInterop;
 using Microsoft.Maui.Storage;
-using System.Collections.Concurrent;
 
 namespace Avae.Essentials;
 
@@ -10,38 +10,90 @@ namespace Avae.Essentials;
 /// are unreadable outside this origin's browser context. This is best-effort:
 /// any script running on the same origin can decrypt values, and clearing site
 /// data destroys the key (existing values then read as null).
+///
+/// GetAsync/SetAsync are awaitable and call JS directly. Remove/RemoveAll are
+/// synchronous per <see cref="ISecureStorage"/>: they return as soon as the
+/// removal is queued, not once it's persisted. A per-key semaphore ensures any
+/// GetAsync/SetAsync on the same key that starts afterward waits for the queued
+/// removal to actually finish in JS first, so callers never observe a stale
+/// value mid-removal.
 /// </summary>
-public class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
+public sealed class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
 {
-    const string KeyPrefix = "maui:securestorage:";
+    private const string KeyPrefix = "maui:securestorage:";
 
     private readonly ConcurrentDictionary<string, byte> _knownKeys = new();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
 
-    /// <summary>Loads the set of existing keys (not values). Idempotent.</summary>
+    private SemaphoreSlim GetLock(string storageKey)
+        => _locks.GetOrAdd(storageKey, _ => new SemaphoreSlim(1, 1));
+
+    /// <summary>Loads the set of existing keys (not values). Idempotent. Call once at startup.</summary>
     public async Task InitializeAsync()
     {
-        var keys = await BlazorEssentialsInterop.InvokeWithRetryAsync<string[]>(js, "secureKeys", KeyPrefix);
+        var keys = await BlazorEssentialsInterop
+            .InvokeWithRetryAsync<string[]>(js, "secureKeys", KeyPrefix)
+            .ConfigureAwait(false);
+
         foreach (var k in keys ?? [])
             _knownKeys[k] = 0;
     }
 
     public async Task<string?> GetAsync(string key)
-	{
-		return await BlazorEssentialsInterop.InvokeWithRetryAsync<string?>(js, "secureGet", KeyPrefix + key).ConfigureAwait(false);
-	}
+    {
+        var storageKey = KeyPrefix + key;
+        var gate = GetLock(storageKey);
 
-	public async Task SetAsync(string key, string value)
-	{
-		await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "secureSet", KeyPrefix + key, value).ConfigureAwait(false);
-	}
+        // Waits for any in-flight Remove on this key to finish first, so a
+        // Remove immediately followed by a Get can't return the stale value.
+        await gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            return await BlazorEssentialsInterop
+                .InvokeWithRetryAsync<string?>(js, "secureGet", storageKey)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task SetAsync(string key, string value)
+    {
+        var storageKey = KeyPrefix + key;
+        var gate = GetLock(storageKey);
+
+        await gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await BlazorEssentialsInterop
+                .InvokeVoidWithRetryAsync(js, "secureSet", storageKey, value)
+                .ConfigureAwait(false);
+
+            _knownKeys[storageKey] = 0;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
 
     public bool Remove(string key)
     {
         var storageKey = KeyPrefix + key;
+
+        // Only proceed if the key was actually known; matches the original
+        // semantics of returning whether something was removed.
         if (!_knownKeys.TryRemove(storageKey, out _))
             return false;
 
-        PersistRemove(storageKey);
+        var gate = GetLock(storageKey);
+
+        // Fire-and-forget: Remove itself stays synchronous, satisfying
+        // ISecureStorage. GetAsync/SetAsync on this key will block on the same
+        // gate until this finishes, so no caller can observe a stale value.
+        _ = RemoveLockedAsync(gate, storageKey);
         return true;
     }
 
@@ -49,13 +101,32 @@ public class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
     {
         foreach (var storageKey in _knownKeys.Keys.ToList())
         {
-            if (_knownKeys.TryRemove(storageKey, out _))
-                PersistRemove(storageKey);
+            if (!_knownKeys.TryRemove(storageKey, out _))
+                continue;
+
+            var gate = GetLock(storageKey);
+            _ = RemoveLockedAsync(gate, storageKey);
         }
     }
 
-    private async void PersistRemove(string storageKey)
+    private async Task RemoveLockedAsync(SemaphoreSlim gate, string storageKey)
     {
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "secureRemove", storageKey);
+        await gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await BlazorEssentialsInterop
+                .InvokeVoidWithRetryAsync(js, "secureRemove", storageKey)
+                .ConfigureAwait(false);
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit is gone; nothing more we can do. The key is already
+            // removed from _knownKeys, so a later re-initialize will pick up
+            // reality from localStorage again.
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 }
