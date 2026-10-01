@@ -30,7 +30,8 @@ public sealed class BlazorAppInfo : IAppInfo, IAsyncDisposable
         if (snapshot != null)
             Apply(snapshot);
         _ref?.Dispose();
-        _ref = await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorAppInfo>>("appInfoSubscribeTheme", this);
+        _ref = DotNetObjectReference.Create(this);
+        await BlazorEssentials.Module.InvokeVoidAsync("appInfoSubscribeTheme", _ref);
     }
 
     [JSInvokable]

@@ -59,7 +59,8 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
         if (_watching) return;
         _watching = true;        
         _ref?.Dispose();
-        _ref = (await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorDeviceDisplay>>("ddSubscribe", this));
+        _ref = DotNetObjectReference.Create(this);
+        await BlazorEssentials.Module.InvokeVoidAsync("ddSubscribe", _ref);
     }
 
     private async Task SetWakeLockAsync(bool on)

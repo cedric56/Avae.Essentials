@@ -44,6 +44,7 @@ public abstract class BlazorSensorBase(string kind)
         if (IsMonitoring)
             throw new InvalidOperationException($"The {_kind} sensor is already being monitored.");
 
+        _ref?.Dispose();
         _ref = DotNetObjectReference.Create(this);
         var frequencyHz = ToFrequencyHz(sensorSpeed);
 

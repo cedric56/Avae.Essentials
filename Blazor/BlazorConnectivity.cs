@@ -20,7 +20,8 @@ public sealed class BlazorConnectivity : IConnectivity, IAsyncDisposable
         if (snapshot is not null)
             Apply(snapshot, false);
         _ref?.Dispose();
-        _ref = (await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorConnectivity>>("connectivitySubscribe", this));
+        _ref = DotNetObjectReference.Create(this);
+        await BlazorEssentials.Module.InvokeVoidAsync("connectivitySubscribe", _ref);
     }
 
     [JSInvokable]

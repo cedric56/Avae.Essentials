@@ -24,7 +24,8 @@ public sealed class BlazorBattery : IBattery, IDisposable
         if (snapshot is not null)
             Apply(snapshot);
         _ref?.Dispose();
-        _ref = (await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorBattery>>("batSubscribe", this));            
+        _ref = DotNetObjectReference.Create(this);
+        await BlazorEssentials.Module.InvokeVoidAsync("batSubscribe", _ref);
     }
 
     [JSInvokable]
