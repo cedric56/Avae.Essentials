@@ -6,5 +6,6 @@
     <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageVersion Include="Microsoft.Maui.Platforms.MacOS.Essentials" Version="0.1.0-preview.12.26368.2" />
     <PackageVersion Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" Version="0.1.0-preview.12.26421.1" />
+    <PackageVersion Include="Microsoft.Maui.Essentials" Version="11.0.0-rc.1.26451.6" />
   </ItemGroup>
 </Project>

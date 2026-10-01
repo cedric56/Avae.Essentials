@@ -214,7 +214,7 @@ public static class Extensions
         var preferences = new AvaloniaPreferences();
         var fileSystem = new AvaloniaFileSystem();
         var webAuthenticator = (Microsoft.Maui.Authentication.IWebAuthenticator)AvaloniaDefaults.CreateAvaloniaWebAuthenticator(platformProvider);
-#if LINUX_OS
+
         if (OperatingSystem.IsLinux())
         {
             services.SetDefaults(
@@ -255,8 +255,7 @@ public static class Extensions
                 webAuthenticator,
                 () => VersionTracking.Default);
         }
-        return;
-#elif MACOS
+#if MACOS
         services.SetDefaults(
             null!,
             null!,

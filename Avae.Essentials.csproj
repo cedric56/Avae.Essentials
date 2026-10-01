@@ -12,7 +12,8 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <IsLinuxOS>$([MSBuild]::IsOSPlatform('linux'))"</IsLinuxOS>
+    <!--<_KernelRelease Condition="Exists('/proc/sys/kernel/osrelease')">$([System.IO.File]::ReadAllText('/proc/sys/kernel/osrelease').ToLowerInvariant())</_KernelRelease>
+    <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux')) OR $([System.String]::Copy('$(_KernelRelease)').Contains('microsoft')) OR $([System.String]::Copy('$(_KernelRelease)').Contains('wsl'))">true</IsLinuxOS>-->
     <IsWindowsOS>$([MSBuild]::IsOSPlatform('Windows'))</IsWindowsOS>
     <IsAndroidTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-android'))</IsAndroidTFM>
     <IsIosTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-ios'))</IsIosTFM>
@@ -26,7 +27,7 @@
     <Version>1.0.0-preview.3</Version>
     <AvaloniaNameGeneratorIsEnabled>false</AvaloniaNameGeneratorIsEnabled>
   </PropertyGroup>
-
+  
   <PropertyGroup>
     <SupportedOSPlatformVersion Condition="'$(IsAndroidTFM)' == 'true'">24</SupportedOSPlatformVersion>
   </PropertyGroup>
@@ -34,7 +35,6 @@
   <!-- Conditionally define the symbols -->
   <PropertyGroup>
     <DefineConstants Condition="'$(IsWindowsOS)' == 'true'">$(DefineConstants);WINDOWS_OS</DefineConstants>
-    <DefineConstants Condition="'$(IsLinuxOS)' == 'true'">$(DefineConstants);LINUX_OS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -79,13 +79,11 @@
     <PackageReference Include="Microsoft.Maui.Platforms.MacOS.Essentials" PrivateAssets="compile" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(IsLinuxOS)' == 'true'">
-    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" PrivateAssets="compile" />
-  </ItemGroup>
-
+    
   <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials"  />
     <PackageReference Include="Avalonia.Controls.Maui.Essentials" />
-    <PackageReference Include="Microsoft.JSInterop" />
+    <!--<PackageReference Include="Microsoft.Maui.Essentials" />-->
   </ItemGroup>
 
 </Project>
