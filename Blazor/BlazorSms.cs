@@ -6,7 +6,7 @@ namespace Avae.Essentials;
 
 
 /// <summary>SMS compose via an sms: link (effective on mobile browsers).</summary>
-public class BlazorSms(IJSRuntime js) : ISms
+public class BlazorSms : ISms
 {
     public bool IsComposeSupported => true;
 
@@ -17,6 +17,6 @@ public class BlazorSms(IJSRuntime js) : ISms
             url.Append(string.Join(",", message.Recipients.Select(Uri.EscapeDataString)));
         if (!string.IsNullOrEmpty(message?.Body))
             url.Append("?body=").Append(Uri.EscapeDataString(message.Body));
-        await BlazorLauncher.NavigateToAsync(js, url.ToString());
+        await BlazorLauncher.NavigateToAsync(url.ToString());
     }
 }

@@ -1,6 +1,5 @@
 using Microsoft.JSInterop;
 using Microsoft.Maui.Devices;
-using static BlazorConnectivity;
 
 namespace Avae.Essentials;
 
@@ -10,7 +9,7 @@ namespace Avae.Essentials;
 /// automatically when the page becomes visible again, since browsers release wake locks
 /// whenever the tab is hidden.
 /// </summary>
-public sealed class BlazorDeviceDisplay(IJSRuntime js) : IDeviceDisplay, IAsyncDisposable
+public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
 {
     public sealed record Snapshot(double Width, double Height, double PixelRatio, string OrientationType, bool WakeLockActive);
     public sealed record ChangeSnapshot(double Width, double Height, double PixelRatio, string OrientationType);
@@ -25,7 +24,7 @@ public sealed class BlazorDeviceDisplay(IJSRuntime js) : IDeviceDisplay, IAsyncD
 
     public async Task InitializeAsync()
     {
-        var snapshot = await BlazorEssentialsInterop.InvokeWithRetryAsync<Snapshot?>(js, "ddGetSnapshot");
+        var snapshot = await BlazorEssentials.Module.InvokeAsync<Snapshot?>("ddGetSnapshot");
         if (snapshot is not null)
         {
             Apply(snapshot.Width, snapshot.Height, snapshot.PixelRatio, snapshot.OrientationType);
@@ -59,18 +58,14 @@ public sealed class BlazorDeviceDisplay(IJSRuntime js) : IDeviceDisplay, IAsyncD
     {
         if (_watching) return;
         _watching = true;        
-        _ref = (await BlazorEssentialsInterop.SubscribeWithRetryAsync(js,
-            async () => await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime),
-            await BlazorEssentials.InitializeAsync(js),
-            "ddSubscribe",
-            this,
-            _ref)).Reference;
+        _ref?.Dispose();
+        _ref = (await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorDeviceDisplay>>("ddSubscribe", this));
     }
 
     private async Task SetWakeLockAsync(bool on)
     {
-        if (_ref is null) EnsureWatching();
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "ddSetWakeLock", _ref, on);
+        EnsureWatching();
+        await BlazorEssentials.Module.InvokeVoidAsync("ddSetWakeLock", _ref, on);
     }
 
     [JSInvokable]
@@ -102,6 +97,6 @@ public sealed class BlazorDeviceDisplay(IJSRuntime js) : IDeviceDisplay, IAsyncD
     public async ValueTask DisposeAsync()
     {
         _ref?.Dispose();
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "ddUnsubscribe");
+        await BlazorEssentials.Module.InvokeVoidAsync("ddUnsubscribe");
     }
 }

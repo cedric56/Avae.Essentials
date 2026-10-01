@@ -9,27 +9,23 @@ namespace Avae.Essentials;
 /// readable with regular System.IO APIs.
 /// PickOptions.FileTypes is platform-keyed and has no browser entry, so it is ignored.
 /// </summary>
-public sealed class BlazorFilePicker(IJSRuntime js) : IFilePicker
+public sealed class BlazorFilePicker : IFilePicker
 {
     public async Task<FileResult?> PickAsync(PickOptions? options = null)
         => (await PickCoreAsync(
-            multiple: false,
-            await BlazorEssentials.InitializeAsync(js))).FirstOrDefault();
+            multiple: false)).FirstOrDefault();
 
     private sealed record PickedFile(string Name, string Type, byte[] data);
 
     public async Task<IEnumerable<FileResult>?> PickMultipleAsync(PickOptions? options = null)
         => await PickCoreAsync(            
-            multiple: true,
-            await BlazorEssentials.InitializeAsync(js)).ConfigureAwait(false);
+            multiple: true);
 
-    public static async Task<IEnumerable<FileResult>> PickCoreAsync(bool multiple, IJSObjectReference module, int attempt = 0)
+    public static async Task<IEnumerable<FileResult>> PickCoreAsync(bool multiple)
     {
-        const int maxAttempts = 2;
-
         try
         {
-            var files = await module.InvokeAsync<PickedFile[]>(
+            var files = await BlazorEssentials.Module.InvokeAsync<PickedFile[]>(
                 "pickFiles", (string?)null, multiple);
 
             var pickDirectory = Path.Combine(
@@ -50,21 +46,7 @@ public sealed class BlazorFilePicker(IJSRuntime js) : IFilePicker
             }
             return results;
         }
-        catch (JSDisconnectedException) when (attempt < maxAttempts)
-        {
-            // Circuit dropped — try to re-import once, then give up.
-            try
-            {
-                module = await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime);
-            }
-            catch (JSDisconnectedException)
-            {
-                return Enumerable.Empty<FileResult>();
-            }
-
-            return await PickCoreAsync(multiple, module, attempt + 1);
-        }
-        catch (JSDisconnectedException)
+        catch
         {
             return Enumerable.Empty<FileResult>();
         }

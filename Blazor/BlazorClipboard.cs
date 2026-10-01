@@ -9,7 +9,7 @@ namespace Avae.Essentials;
 /// synchronous "has text" query — <see cref="HasText"/> reflects the last value
 /// observed through this API rather than the live OS clipboard.
 /// </summary>
-public class BlazorClipboard(IJSRuntime js) : IClipboard
+public class BlazorClipboard : IClipboard
 {
     bool lastKnownHasText;
 
@@ -19,14 +19,14 @@ public class BlazorClipboard(IJSRuntime js) : IClipboard
 
     public async Task SetTextAsync(string? text)
     {
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "clipboardWriteText", text ?? string.Empty).ConfigureAwait(false);
+        await BlazorEssentials.Module.InvokeVoidAsync("clipboardWriteText", text ?? string.Empty).ConfigureAwait(false);
         lastKnownHasText = !string.IsNullOrEmpty(text);
         ClipboardContentChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public async Task<string?> GetTextAsync()
     {
-        var text = await BlazorEssentialsInterop.InvokeWithRetryAsync<string?>(js, "clipboardReadText").ConfigureAwait(false);
+        var text = await BlazorEssentials.Module.InvokeAsync<string?>("clipboardReadText").ConfigureAwait(false);
         lastKnownHasText = !string.IsNullOrEmpty(text);
         return string.IsNullOrEmpty(text) ? null : text;
     }

@@ -12,7 +12,6 @@ using Microsoft.Maui.Dispatching;
 using Microsoft.Maui.Media;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
-using static Avae.Essentials.Extensions;
 
 namespace Avae.Essentials;
 

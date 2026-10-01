@@ -10,7 +10,7 @@ namespace Avae.Essentials;
 /// current by browser theme-change events, so the synchronous <see cref="IAppInfo"/> surface
 /// never touches JS interop directly.
 /// </summary>
-public sealed class BlazorAppInfo(IJSRuntime js) : IAppInfo, IAsyncDisposable
+public sealed class BlazorAppInfo : IAppInfo, IAsyncDisposable
 {
     private static readonly Version AssemblyVersion =
         Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(1, 0);
@@ -26,16 +26,11 @@ public sealed class BlazorAppInfo(IJSRuntime js) : IAppInfo, IAsyncDisposable
 
     public async Task InitializeAsync()
     {        
-        var snapshot = await BlazorEssentialsInterop.InvokeWithRetryAsync<AppInfoSnapshot>(js, "appInfoGet");
+        var snapshot = await BlazorEssentials.Module.InvokeAsync<AppInfoSnapshot>("appInfoGet");
         if (snapshot != null)
             Apply(snapshot);
-
-        _ref = (await BlazorEssentialsInterop.SubscribeWithRetryAsync(js,
-            async () => await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime),
-            await BlazorEssentials.InitializeAsync(js),
-            "appInfoSubscribeTheme",
-            this,
-            _ref)).Reference;
+        _ref?.Dispose();
+        _ref = await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorAppInfo>>("appInfoSubscribeTheme", this);
     }
 
     [JSInvokable]
@@ -70,6 +65,6 @@ public sealed class BlazorAppInfo(IJSRuntime js) : IAppInfo, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _ref?.Dispose();
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "appInfoUnsubscribeTheme");
+        await BlazorEssentials.Module.InvokeVoidAsync("appInfoUnsubscribeTheme");
     }
 }

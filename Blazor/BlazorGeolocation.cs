@@ -5,7 +5,7 @@ using Microsoft.Maui.Devices.Sensors;
 namespace Avae.Essentials;
 
 /// <summary>Geolocation backed by navigator.geolocation (permission-prompted by the browser).</summary>
-public sealed class BlazorGeolocation(IJSRuntime js) : IGeolocation
+public sealed class BlazorGeolocation : IGeolocation
 {
     public sealed record Payload(double Latitude, double Longitude, double? Accuracy,
         double? Altitude, double? AltitudeAccuracy, double? Heading, double? Speed, double Timestamp);
@@ -29,8 +29,7 @@ public sealed class BlazorGeolocation(IJSRuntime js) : IGeolocation
         cancelToken.ThrowIfCancellationRequested();
         try
         {
-            var payload = await BlazorEssentialsInterop.InvokeWithRetryAsync<Payload>(js,
-                "geoGetCurrentPosition", cancelToken, UseHighAccuracy(request), request.Timeout.TotalMilliseconds);
+            var payload = await BlazorEssentials.Module.InvokeAsync<Payload>("geoGetCurrentPosition", cancelToken, UseHighAccuracy(request), request.Timeout.TotalMilliseconds);
             if (payload != null)
                 return _lastKnownLocation = ToLocation(payload);
         }
@@ -59,7 +58,7 @@ public sealed class BlazorGeolocation(IJSRuntime js) : IGeolocation
 
         try
         {
-            _watchId = await BlazorEssentialsInterop.InvokeWithRetryAsync<int>(js, "geoWatchStart", _ref, highAccuracy);
+            _watchId = await BlazorEssentials.Module.InvokeAsync<int>("geoWatchStart", _ref, highAccuracy);
         }
         catch (JSDisconnectedException)
         {
@@ -77,7 +76,7 @@ public sealed class BlazorGeolocation(IJSRuntime js) : IGeolocation
         var id = _watchId;
         _watchId = -1;
 
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "geoWatchStop", id);
+        await BlazorEssentials.Module.InvokeVoidAsync("geoWatchStop", id);
     }
 
     [JSInvokable]

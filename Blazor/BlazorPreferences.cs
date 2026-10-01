@@ -13,7 +13,7 @@ namespace Avae.Essentials;
 /// in the background. A per-key semaphore serializes those background persists, so a rapid
 /// Set-then-Remove (or vice versa) on the same key can't land in localStorage out of order.
 /// </summary>
-public sealed class BlazorPreferences(IJSRuntime js) : IPreferences
+public sealed class BlazorPreferences : IPreferences
 {
     private const string KeyPrefix = "maui:prefs:";
 
@@ -32,8 +32,7 @@ public sealed class BlazorPreferences(IJSRuntime js) : IPreferences
     /// </summary>
     public async Task InitializeAsync()
     {
-        var all = await BlazorEssentialsInterop
-            .InvokeWithRetryAsync<Dictionary<string, string>>(js, "prefsGetAll", KeyPrefix)
+        var all = await BlazorEssentials.Module.InvokeAsync<Dictionary<string, string>>("prefsGetAll", KeyPrefix)
             .ConfigureAwait(false);
 
         foreach (var (k, v) in all ?? [])
@@ -112,8 +111,7 @@ public sealed class BlazorPreferences(IJSRuntime js) : IPreferences
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            await BlazorEssentialsInterop
-                .InvokeVoidWithRetryAsync(js, "prefsSet", storageKey, value)
+            await BlazorEssentials.Module.InvokeVoidAsync("prefsSet", storageKey, value)
                 .ConfigureAwait(false);
         }
         catch (JSDisconnectedException) { }
@@ -129,8 +127,7 @@ public sealed class BlazorPreferences(IJSRuntime js) : IPreferences
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            await BlazorEssentialsInterop
-                .InvokeVoidWithRetryAsync(js, "prefsRemove", storageKey)
+            await BlazorEssentials.Module.InvokeVoidAsync("prefsRemove", storageKey)
                 .ConfigureAwait(false);
         }
         catch (JSDisconnectedException) { }

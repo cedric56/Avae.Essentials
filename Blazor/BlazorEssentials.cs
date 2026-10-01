@@ -12,11 +12,9 @@ namespace Avae.Essentials;
 public static class BlazorEssentials
 {
     private static string? _moduleUrl = string.Empty;
-    private static Task<IJSObjectReference>? initTask;
-    private static readonly object _lock = new();
 
     public static bool IsInitialized =>
-        initTask is { IsCompletedSuccessfully: true };
+        Module != null;
 
     /// <summary>
     /// Throws when the module has not been imported yet. Used by synchronous API surfaces
@@ -31,34 +29,15 @@ public static class BlazorEssentials
                 "before using Essentials APIs.");
     }
 
-    internal static Task<IJSObjectReference> InitializeAsync(IJSRuntime? js)
-    {
-        // Fast path — already initialized
-        if (initTask is { IsCompletedSuccessfully: true })
-            return initTask;
-
-        lock (_lock)
-        {
-            return initTask ??= InvokeCoreAsync(js);
-        }
-    }
-
-    public static bool IsWasm { get; private set; }
-
     public static async Task InitializeAsync(
        IServiceProvider provider,        
-       string moduleUrl,
-       bool isWasm = true)
+       string moduleUrl)
     {
-        IsWasm = isWasm;
-
         _moduleUrl = moduleUrl;
 
         var js = provider.GetRequiredService<IJSRuntime>();
-        CircuitServiceAccessor.Provider = provider;
-        CircuitServiceAccessor.Runtime = js;
 
-        await InitializeAsync(js);
+        Module = await InvokeCoreAsync(js);
 
         var connectivity = (BlazorConnectivity)provider.GetRequiredService<IConnectivity>();
         await connectivity.InitializeAsync();
@@ -100,11 +79,10 @@ public static class BlazorEssentials
         await orientation.InitializeAsync();
 
         var share = (BlazorShare)provider.GetRequiredService<IShare>();
-        await share.InitializeAsync(js, moduleUrl);
-
+        await share.InitializeAsync();
     }
 
-    internal static async Task<IJSObjectReference> InvokeCoreAsync(IJSRuntime? js)
+    internal static async Task<IJSObjectReference> InvokeCoreAsync(IJSRuntime js)
     {
         if (js == null)
             throw new InvalidOperationException();
@@ -112,4 +90,6 @@ public static class BlazorEssentials
         return await js.InvokeAsync<IJSObjectReference>("import", _moduleUrl)
                        .ConfigureAwait(false);
     }
+
+   internal  static IJSObjectReference Module { get; set; } = null!;
 }

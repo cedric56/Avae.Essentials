@@ -5,13 +5,13 @@ using Microsoft.Maui.Devices;
 namespace Avae.Essentials;
 
 /// <summary>Haptic feedback approximated with short navigator.vibrate pulses.</summary>
-public class BlazorHapticFeedback(IJSRuntime js) : IHapticFeedback
+public class BlazorHapticFeedback : IHapticFeedback
 {
     private bool isSupported;
 
     public async Task InitializeAsync()
     {
-        isSupported = await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "vibrationIsSupported");
+        isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("vibrationIsSupported");
     }
 
     public bool IsSupported
@@ -27,6 +27,6 @@ public class BlazorHapticFeedback(IJSRuntime js) : IHapticFeedback
     {
         if (!IsSupported)
             throw new FeatureNotSupportedException("The Vibration API is not available in this browser.");
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "vibrate", type == HapticFeedbackType.LongPress ? 25 : 10);
+        await BlazorEssentials.Module.InvokeVoidAsync("vibrate", type == HapticFeedbackType.LongPress ? 25 : 10);
     }
 }

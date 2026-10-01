@@ -11,17 +11,14 @@ namespace Avae.Essentials;
 /// Share backed by the Web Share API (navigator.share). Requires a secure context
 /// and, in most browsers, a user gesture. File sharing uses Web Share Level 2.
 /// </summary>
-public class BlazorShare : IAvaeShare, IAsyncDisposable
+public class BlazorShare : IAvaeShare
 {
     bool _isSupported;
     public bool IsSupported => _isSupported;
 
-    private IJSObjectReference? module;
-
-    public async Task InitializeAsync(IJSRuntime js, string moduleUrl)
+    public async Task InitializeAsync()
     {
-        _isSupported = await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "shareIsSupported");
-        module = await js.InvokeAsync<IJSObjectReference>("import", moduleUrl);
+        _isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("shareIsSupported");
     }
 
     public async Task RequestAsync(ShareTextRequest request)
@@ -29,13 +26,7 @@ public class BlazorShare : IAvaeShare, IAsyncDisposable
         if(!IsSupported)
             throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
 
-        if (module == null)
-        {
-            BlazorEssentials.EnsureInitialized();
-            return;
-        }
-
-        await module.InvokeVoidAsync("share", request.Title, request.Text, request.Uri).ConfigureAwait(false);
+        await BlazorEssentials.Module.InvokeVoidAsync("share", request.Title, request.Text, request.Uri).ConfigureAwait(false);
     }
 
     public Task RequestAsync(ShareFileRequest request) =>
@@ -80,12 +71,6 @@ public class BlazorShare : IAvaeShare, IAsyncDisposable
         if (files.Count == 0)
             throw new ArgumentException("No files were provided to share.");
 
-        if (module == null)
-        {
-            BlazorEssentials.EnsureInitialized();
-            return;
-        }
-
         var names = new string[files.Count];
         var types = new string[files.Count];
         var contents = new string[files.Count];
@@ -101,7 +86,7 @@ public class BlazorShare : IAvaeShare, IAsyncDisposable
 
         try
         {
-            await module.InvokeVoidAsync("shareFiles",
+            await BlazorEssentials.Module.InvokeVoidAsync("shareFiles",
                     title,
                     JsonSerializer.Serialize(names),
                     JsonSerializer.Serialize(types),
@@ -112,12 +97,6 @@ public class BlazorShare : IAvaeShare, IAsyncDisposable
         {
             throw new FeatureNotSupportedException("This browser cannot share files via the Web Share API.");
         }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (module != null)
-            await module.DisposeAsync();
     }
 }
 

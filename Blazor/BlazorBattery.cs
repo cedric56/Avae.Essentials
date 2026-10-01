@@ -7,7 +7,7 @@ namespace Avae.Essentials;
 /// Battery info backed by navigator.getBattery() (Battery Status API — Chromium only).
 /// Where the API is unavailable the state reads as Unknown with a full charge level.
 /// </summary>
-public sealed class BlazorBattery(IJSRuntime js) : IBattery, IDisposable
+public sealed class BlazorBattery : IBattery, IDisposable
 {
     public sealed record Snapshot(double Level, bool Charging);
 
@@ -20,16 +20,11 @@ public sealed class BlazorBattery(IJSRuntime js) : IBattery, IDisposable
     /// <summary>Imports the module, loads the initial snapshot, and subscribes to changes. Idempotent.</summary>
     public async Task InitializeAsync()
     {
-        var snapshot = await BlazorEssentialsInterop.InvokeWithRetryAsync<Snapshot?>(js, "batGetSnapshot");
+        var snapshot = await BlazorEssentials.Module.InvokeAsync<Snapshot?>("batGetSnapshot");
         if (snapshot is not null)
             Apply(snapshot);
-
-        _ref = (await BlazorEssentialsInterop.SubscribeWithRetryAsync<BlazorBattery>(js,
-            async () => await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime),
-            await BlazorEssentials.InitializeAsync(js),
-            "batSubscribe",
-            this,
-            _ref)).Reference;
+        _ref?.Dispose();
+        _ref = (await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorBattery>>("batSubscribe", this));            
     }
 
     [JSInvokable]

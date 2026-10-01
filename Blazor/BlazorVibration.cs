@@ -5,13 +5,13 @@ using Microsoft.Maui.Devices;
 namespace Avae.Essentials;
 
 /// <summary>Vibration backed by navigator.vibrate (mobile browsers; no-ops when unsupported by hardware).</summary>
-public class BlazorVibration(IJSRuntime js) : IVibration
+public class BlazorVibration : IVibration
 {
     private bool isSupported;
 
     public async Task InitializeAsync()
     {
-        isSupported = await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "vibrationIsSupported");
+        isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("vibrationIsSupported");
     }
 
     public bool IsSupported
@@ -30,13 +30,13 @@ public class BlazorVibration(IJSRuntime js) : IVibration
         BlazorEssentials.EnsureInitialized();
         if (!IsSupported)
             throw new FeatureNotSupportedException("The Vibration API is not available in this browser.");
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "vibrate", duration.TotalMilliseconds);        
+        await BlazorEssentials.Module.InvokeVoidAsync("vibrate", duration.TotalMilliseconds);        
     }
 
     public async void Cancel()
     {
         BlazorEssentials.EnsureInitialized();
         if (IsSupported)
-            await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "vibrate", 0);
+            await BlazorEssentials.Module.InvokeVoidAsync("vibrate", 0);
     }
 }

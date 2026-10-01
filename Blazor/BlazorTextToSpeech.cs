@@ -1,14 +1,11 @@
 ﻿using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Media;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Avae.Essentials;
 
 /// <summary>Text to speech backed by the Web Speech API (speechSynthesis).</summary>
-public class BlazorTextToSpeech(IJSRuntime js) : ITextToSpeech
+public class BlazorTextToSpeech : ITextToSpeech
 {
     //internal static async Task<string> SpeechGetVoicesAsync(IJSRuntime js) =>
     //    await ModuleRef(js).InvokeAsync<string>("speechGetVoices");
@@ -28,14 +25,13 @@ public class BlazorTextToSpeech(IJSRuntime js) : ITextToSpeech
 
         using var registration = cancelToken.CanBeCanceled
             ? cancelToken.Register(async () => { 
-                await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "speechCancel"); 
+                await BlazorEssentials.Module.InvokeVoidAsync("speechCancel"); 
             })
             : default;
 
         try
         {
-            await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js,
-                "speak", text,
+            await BlazorEssentials.Module.InvokeVoidAsync("speak", text,
                 options?.Locale?.Language,
                 options?.Pitch ?? -1,
                 -1,

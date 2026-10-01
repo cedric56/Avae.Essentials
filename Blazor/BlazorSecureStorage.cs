@@ -18,7 +18,7 @@ namespace Avae.Essentials;
 /// removal to actually finish in JS first, so callers never observe a stale
 /// value mid-removal.
 /// </summary>
-public sealed class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
+public sealed class BlazorSecureStorage : ISecureStorage
 {
     private const string KeyPrefix = "maui:securestorage:";
 
@@ -31,8 +31,7 @@ public sealed class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
     /// <summary>Loads the set of existing keys (not values). Idempotent. Call once at startup.</summary>
     public async Task InitializeAsync()
     {
-        var keys = await BlazorEssentialsInterop
-            .InvokeWithRetryAsync<string[]>(js, "secureKeys", KeyPrefix)
+        var keys = await BlazorEssentials.Module.InvokeAsync<string[]>("secureKeys", KeyPrefix)
             .ConfigureAwait(false);
 
         foreach (var k in keys ?? [])
@@ -49,8 +48,7 @@ public sealed class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            return await BlazorEssentialsInterop
-                .InvokeWithRetryAsync<string?>(js, "secureGet", storageKey)
+            return await BlazorEssentials.Module.InvokeAsync<string?>("secureGet", storageKey)
                 .ConfigureAwait(false);
         }
         finally
@@ -67,8 +65,7 @@ public sealed class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            await BlazorEssentialsInterop
-                .InvokeVoidWithRetryAsync(js, "secureSet", storageKey, value)
+            await BlazorEssentials.Module.InvokeVoidAsync("secureSet", storageKey, value)
                 .ConfigureAwait(false);
 
             _knownKeys[storageKey] = 0;
@@ -114,8 +111,7 @@ public sealed class BlazorSecureStorage(IJSRuntime js) : ISecureStorage
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            await BlazorEssentialsInterop
-                .InvokeVoidWithRetryAsync(js, "secureRemove", storageKey)
+            await BlazorEssentials.Module.InvokeVoidAsync("secureRemove", storageKey)
                 .ConfigureAwait(false);
         }
         catch (JSDisconnectedException)

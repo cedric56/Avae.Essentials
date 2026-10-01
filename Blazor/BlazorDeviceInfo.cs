@@ -8,7 +8,7 @@ namespace Avae.Essentials;
 /// Fetched once via <see cref="InitializeAsync"/> and cached, so the synchronous
 /// <see cref="IDeviceInfo"/> surface never calls JS interop directly.
 /// </summary>
-public sealed class BlazorDeviceInfo(IJSRuntime js) : IDeviceInfo
+public sealed class BlazorDeviceInfo : IDeviceInfo
 {
     /// <summary>The DevicePlatform reported by this backend.</summary>
     public static DevicePlatform BrowserPlatform { get; } = DevicePlatform.Create("Browser");
@@ -24,7 +24,7 @@ public sealed class BlazorDeviceInfo(IJSRuntime js) : IDeviceInfo
     /// <summary>Fetches and caches the device info. Idempotent. Must complete before any property is read.</summary>
     public async Task InitializeAsync()
     {
-        var raw = await BlazorEssentialsInterop.InvokeWithRetryAsync<DeviceInfoJson>(js, "getDeviceInfo");
+        var raw = await BlazorEssentials.Module.InvokeAsync<DeviceInfoJson>("getDeviceInfo");
         if (raw is not null)
             _info = Parse(raw);
     }

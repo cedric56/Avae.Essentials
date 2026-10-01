@@ -1,11 +1,10 @@
-﻿using Microsoft.JSInterop;
-using Microsoft.Maui.ApplicationModel;
+﻿using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Media;
 using Microsoft.Maui.Storage;
 
 namespace Avae.Essentials;
 
-internal class BlazorMediaPicker(IJSRuntime js) : IAvaeMediaPicker
+internal class BlazorMediaPicker : IAvaeMediaPicker
 {
     public bool IsCaptureSupported => false;
 
@@ -14,23 +13,19 @@ internal class BlazorMediaPicker(IJSRuntime js) : IAvaeMediaPicker
 
     public async Task<FileResult?> PickPhotoAsync(MediaPickerOptions? options = null)
         => (await BlazorFilePicker.PickCoreAsync(
-            multiple: false,
-            await BlazorEssentials.InitializeAsync(js))).FirstOrDefault();
+            multiple: false)).FirstOrDefault();
 
     public async Task<List<FileResult>> PickPhotosAsync(MediaPickerOptions? options = null)
     => (await BlazorFilePicker.PickCoreAsync(
-        multiple: true,
-        await BlazorEssentials.InitializeAsync(js)) ?? []).ToList();
+        multiple: true) ?? []).ToList();
 
     public async Task<FileResult?> PickVideoAsync(MediaPickerOptions? options = null)
     => (await BlazorFilePicker.PickCoreAsync(
-        multiple: false,
-        await BlazorEssentials.InitializeAsync(js))).FirstOrDefault();
+        multiple: false)).FirstOrDefault();
 
     public async Task<List<FileResult>> PickVideosAsync(MediaPickerOptions? options = null)
     => (await BlazorFilePicker.PickCoreAsync(
-        multiple: true,
-        await BlazorEssentials.InitializeAsync(js)) ?? []).ToList();
+        multiple: true) ?? []).ToList();
 
     public Task<FileResult?> CapturePhotoAsync(MediaPickerOptions? options = null) =>
         throw new FeatureNotSupportedException("Camera capture is not supported in the browser backend.");

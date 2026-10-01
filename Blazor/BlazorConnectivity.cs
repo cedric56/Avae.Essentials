@@ -2,7 +2,7 @@
 using Microsoft.JSInterop;
 using Microsoft.Maui.Networking;
 
-public sealed class BlazorConnectivity(IJSRuntime js) : IConnectivity, IAsyncDisposable
+public sealed class BlazorConnectivity : IConnectivity, IAsyncDisposable
 {
     public sealed record BrowserState(bool Online, string Type, bool SaveData);
 
@@ -16,16 +16,11 @@ public sealed class BlazorConnectivity(IJSRuntime js) : IConnectivity, IAsyncDis
     // Idempotent: safe to call from several places.
     public async Task InitializeAsync()
     {
-        var snapshot = await BlazorEssentialsInterop.InvokeWithRetryAsync<BrowserState?>(js, "connectivityGetSnapshot");
+        var snapshot = await BlazorEssentials.Module.InvokeAsync<BrowserState?>("connectivityGetSnapshot");
         if (snapshot is not null)
             Apply(snapshot, false);
-
-        _ref = (await BlazorEssentialsInterop.SubscribeWithRetryAsync(js,
-            async () => await BlazorEssentials.InvokeCoreAsync(CircuitServiceAccessor.Runtime),
-            await BlazorEssentials.InitializeAsync(js),
-            "connectivitySubscribe",
-            this,
-            _ref)).Reference;
+        _ref?.Dispose();
+        _ref = (await BlazorEssentials.Module.InvokeAsync<DotNetObjectReference<BlazorConnectivity>>("connectivitySubscribe", this));
     }
 
     [JSInvokable]
@@ -61,6 +56,6 @@ public sealed class BlazorConnectivity(IJSRuntime js) : IConnectivity, IAsyncDis
     public async ValueTask DisposeAsync()
     {
         _ref?.Dispose();
-        await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "connectivityUnsubscribe");
+        await BlazorEssentials.Module.InvokeVoidAsync("connectivityUnsubscribe");
     }
 }

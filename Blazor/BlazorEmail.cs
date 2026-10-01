@@ -1,12 +1,11 @@
-﻿using Microsoft.JSInterop;
-using Microsoft.Maui.ApplicationModel;
+﻿using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.Communication;
 using System.Text;
 
 namespace Avae.Essentials;
 
 /// <summary>Email compose via a mailto: link handled by the user's configured mail client.</summary>
-public class BlazorEmail(IJSRuntime js) : IEmail
+public class BlazorEmail : IEmail
 {
     public bool IsComposeSupported => true;
 
@@ -33,6 +32,6 @@ public class BlazorEmail(IJSRuntime js) : IEmail
         if (query.Count > 0)
             url.Append('?').Append(string.Join("&", query));
 
-        await BlazorLauncher.NavigateToAsync(js, url.ToString());
+        await BlazorLauncher.NavigateToAsync(url.ToString());
     }
 }

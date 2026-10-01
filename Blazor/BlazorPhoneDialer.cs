@@ -5,7 +5,7 @@ namespace Avae.Essentials;
 
 
 /// <summary>Phone dialing via a tel: link (effective on mobile browsers or with a desktop handler).</summary>
-public class BlazorPhoneDialer(IJSRuntime js) : IPhoneDialer
+public class BlazorPhoneDialer: IPhoneDialer
 {
     public bool IsSupported => true;
 
@@ -13,6 +13,6 @@ public class BlazorPhoneDialer(IJSRuntime js) : IPhoneDialer
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(number);
         BlazorEssentials.EnsureInitialized();
-        await BlazorLauncher.NavigateToAsync(js, "tel:" + Uri.EscapeDataString(number));
+        await BlazorLauncher.NavigateToAsync("tel:" + Uri.EscapeDataString(number));
     }
 }

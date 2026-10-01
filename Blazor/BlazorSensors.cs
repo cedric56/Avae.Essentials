@@ -14,7 +14,7 @@ namespace Avae.Essentials;
 /// On iOS Safari the first Start triggers the motion-permission prompt and must be
 /// called from a user gesture.
 /// </summary>
-public abstract class BlazorSensorBase(IJSRuntime js, string kind)
+public abstract class BlazorSensorBase(string kind)
 {
     private readonly string _kind = kind;
 
@@ -34,7 +34,7 @@ public abstract class BlazorSensorBase(IJSRuntime js, string kind)
     /// <summary>Imports the module and checks browser support. Idempotent.</summary>
     public async Task InitializeAsync()
     {
-        _isSupported = await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "sensorIsSupported", _kind);
+        _isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("sensorIsSupported", _kind);
     }
 
     private protected async Task StartCoreAsync(SensorSpeed sensorSpeed)
@@ -50,7 +50,7 @@ public abstract class BlazorSensorBase(IJSRuntime js, string kind)
         bool started;
         try
         {
-            started = await BlazorEssentialsInterop.InvokeWithRetryAsync<bool>(js, "sensorStart", _ref, _kind, frequencyHz);
+            started = await BlazorEssentials.Module.InvokeAsync<bool>("sensorStart", _ref, _kind, frequencyHz);
         }
         catch (JSDisconnectedException)
         {
@@ -81,7 +81,7 @@ public abstract class BlazorSensorBase(IJSRuntime js, string kind)
         IsMonitoring = false;
         try
         {
-            await BlazorEssentialsInterop.InvokeVoidWithRetryAsync(js, "sensorStop", _kind);
+            await BlazorEssentials.Module.InvokeVoidAsync("sensorStop", _kind);
         }
         finally
         {
@@ -106,7 +106,7 @@ public abstract class BlazorSensorBase(IJSRuntime js, string kind)
 /// <summary>Accelerometer from devicemotion accelerationIncludingGravity, reported in g.</summary>
 public class BlazorAccelerometer : BlazorSensorBase, IAccelerometer
 {
-    public BlazorAccelerometer(IJSRuntime js) : base(js,"accelerometer") { }
+    public BlazorAccelerometer() : base("accelerometer") { }
 
 	public event EventHandler<AccelerometerChangedEventArgs>? ReadingChanged;
 
@@ -132,7 +132,7 @@ public class BlazorAccelerometer : BlazorSensorBase, IAccelerometer
 /// <summary>Gyroscope from devicemotion rotationRate, converted to rad/s.</summary>
 public class BlazorGyroscope : BlazorSensorBase, IGyroscope
 {
-    public BlazorGyroscope(IJSRuntime js) : base(js, "gyroscope") { }
+    public BlazorGyroscope() : base("gyroscope") { }
 
 	public event EventHandler<GyroscopeChangedEventArgs>? ReadingChanged;
 
@@ -152,7 +152,7 @@ public class BlazorGyroscope : BlazorSensorBase, IGyroscope
 /// <summary>Orientation quaternion derived from deviceorientation Euler angles.</summary>
 public class BlazorOrientationSensor : BlazorSensorBase, IOrientationSensor
 {
-    public BlazorOrientationSensor(IJSRuntime js) : base(js, "orientation") { }
+    public BlazorOrientationSensor() : base("orientation") { }
 
 	public event EventHandler<OrientationSensorChangedEventArgs>? ReadingChanged;
 
@@ -173,7 +173,7 @@ public class BlazorOrientationSensor : BlazorSensorBase, IOrientationSensor
 /// <summary>Compass heading from deviceorientationabsolute (or webkitCompassHeading on iOS).</summary>
 public class BlazorCompass : BlazorSensorBase, ICompass
 {
-    public BlazorCompass(IJSRuntime js) : base(js, "compass") { }
+    public BlazorCompass() : base("compass") { }
 
 	public event EventHandler<CompassChangedEventArgs>? ReadingChanged;
 
