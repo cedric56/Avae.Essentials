@@ -1,3 +1,7 @@
+> [!CAUTION]
+> **`Avae.Essentials` is not ready for production.**
+>
+
 # Avae.Essentials
 
 Cross-platform **device & platform APIs** for the [Avae](https://github.com/cedric56/Avae.Abstractions) stack — sensors, connectivity, clipboard, geolocation, secure storage, share, and more.
