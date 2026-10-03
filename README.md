@@ -4,7 +4,7 @@
 
 Cross-platform device, browser, and platform APIs for Avalonia, .NET MAUI, Blazor/WebAssembly, Windows, Android, iOS, macOS, and Linux hosts.
 
-The API surface intentionally follows **.NET MAUI Essentials** so shared Avae ViewModels can use the same abstractions across UI stacks.
+The API surface intentionally follows **.NET MAUI Essentials** so shared ViewModels can use the same abstractions across UI stacks.
 
 > **Status:** preview — version `1.0.0-preview.3`
 >
