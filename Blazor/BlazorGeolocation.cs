@@ -95,7 +95,7 @@ public sealed class BlazorGeolocation : IGeolocation
     }
 
     [JSInvokable]
-    public void OnLocationChanged(Payload payload)
+    public void OnGeolocationChanged(Payload payload)
     {
         var location = ToLocation(payload);
         _lastKnownLocation = location;
@@ -103,7 +103,7 @@ public sealed class BlazorGeolocation : IGeolocation
     }
 
     [JSInvokable]
-    public void OnListeningFailed(string errorCode)
+    public void OnGeolocationError(string errorCode)
     {
         var error = errorCode switch
         {

@@ -123,9 +123,6 @@ public static class BlazorEssentials
 
         var share = (BlazorShare)provider.GetRequiredService<IShare>();
         await share.InitializeAsync();
-
-        var mediaPicker = (BlazorMediaPicker)provider.GetRequiredService<IMediaPicker>();
-        await mediaPicker.InitializeAsync();
     }
 
     internal static async Task<IJSObjectReference> InvokeCoreAsync(IJSRuntime js)

@@ -5,6 +5,7 @@ using Microsoft.Maui.Storage;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using static BlazorConnectivity;
 
@@ -12,13 +13,6 @@ namespace Avae.Essentials;
 
 internal class BlazorMediaPicker : IAvaeMediaPicker
 {
-    DotNetObjectReference<BlazorMediaPicker>? _ref;
-    public async Task InitializeAsync()
-    {
-        _ref?.Dispose();
-        _ref = DotNetObjectReference.Create(this);
-    }
-
     public bool IsCaptureSupported => true;
 
     public Task<FileResult?> CaptureAsync(bool isPhoto, MediaPickerOptions? options = null)
@@ -42,31 +36,23 @@ internal class BlazorMediaPicker : IAvaeMediaPicker
 
     public async Task<FileResult?> CapturePhotoAsync(MediaPickerOptions? options = null)
     {
-        var result = await BlazorEssentials.Module.InvokeAsync<string>("capturePhotoInPopup");
-        if (!string.IsNullOrWhiteSpace(result))
+        var url = await BlazorEssentials.Module.InvokeAsync<string>("capturePhotoInPopup");
+        if (!string.IsNullOrWhiteSpace(url))
         {
-            await BlazorEssentials.Module.InvokeVoidAsync("sendBlobToDotNet", result, _ref);
-            return new BlazorFileResult(result, ContentTypeResolver.Resolve(Path.GetFileName(result)), _data!);
+            byte[] bytes = await BlazorEssentials.Module.InvokeAsync<byte[]>("getBlobBytes", url);
+            return new BlazorFileResult(url, ContentTypeResolver.Resolve(Path.GetFileName(url)), bytes);
         }
         return null;
     }
 
     public async Task<FileResult?> CaptureVideoAsync(MediaPickerOptions? options = null)
     {
-        var result = await BlazorEssentials.Module.InvokeAsync<string>("capturePhotoInPopup");
-        if (!string.IsNullOrWhiteSpace(result))
+        var url = await BlazorEssentials.Module.InvokeAsync<string>("captureVideoInPopup");
+        if (!string.IsNullOrWhiteSpace(url))
         {
-            await BlazorEssentials.Module.InvokeVoidAsync("sendBlobToDotNet", result, _ref);
-            return new BlazorFileResult(result, ContentTypeResolver.Resolve(Path.GetFileName(result)), _data!);
+            byte[] bytes = await BlazorEssentials.Module.InvokeAsync<byte[]>("getBlobBytes", url);
+            return new BlazorFileResult(url, ContentTypeResolver.Resolve(Path.GetFileName(url)), bytes);
         }
         return null;
-    }
-
-    private static byte[]? _data;
-
-    [JSInvokable]
-    public void ReceiveBlobData(byte[] bytes)
-    {
-        _data = bytes;
     }
 }

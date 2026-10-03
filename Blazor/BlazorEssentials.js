@@ -275,19 +275,12 @@ export function captureVideoInPopup() {
 	return promise;
 }
 
-/* ---------- .NET interop ---------- */
-
-export async function sendBlobToDotNet(blobUrl, dotNetRef) {
+export async function getBlobBytes(blobUrl) {
 	const response = await fetch(blobUrl);
-	const buffer = await (await response.blob()).arrayBuffer();
-	await dotNetRef.invokeMethodAsync("ReceiveBlobData", new Uint8Array(buffer));
+	const buffer = await response.arrayBuffer(); // no need for .blob() first
+	URL.revokeObjectURL(blobUrl);
+	return new Uint8Array(buffer);
 }
-
-export const mediaCapture = {
-	sendBlobToDotNet,
-	capturePhotoInPopup,
-	captureVideoInPopup
-};
 
 // ---------- Contacts -----------
 
