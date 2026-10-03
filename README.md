@@ -4,7 +4,8 @@
 
 # Avae.Essentials
 
-Cross-platform **device & platform APIs** for the [Avae](https://github.com/cedric56/Avae.Abstractions) stack — sensors, connectivity, clipboard, geolocation, secure storage, share, and more.
+Cross-platform **device & platform APIs** for the Avalonia, Maui and Blazor — sensors, connectivity, clipboard, geolocation, secure storage, share, and more.
+Useful on [Avae](https://github.com/cedric56/Avae.Abstractions) stack
 
 API surface is intentionally close to **.NET MAUI Essentials**, so shared ViewModels can call the same capabilities on:
 
