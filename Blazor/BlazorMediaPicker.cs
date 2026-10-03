@@ -22,7 +22,7 @@ internal class BlazorMediaPicker : IAvaeMediaPicker
     public bool IsCaptureSupported => true;
 
     public Task<FileResult?> CaptureAsync(bool isPhoto, MediaPickerOptions? options = null)
-    => throw new FeatureNotSupportedException("Camera capture is not supported in the browser backend.");
+    => isPhoto ? CapturePhotoAsync(options) : CaptureVideoAsync(options);
 
     public async Task<FileResult?> PickPhotoAsync(MediaPickerOptions? options = null)
         => (await BlazorFilePicker.PickCoreAsync(
@@ -45,7 +45,7 @@ internal class BlazorMediaPicker : IAvaeMediaPicker
         var result = await BlazorEssentials.Module.InvokeAsync<string>("capturePhotoInPopup");
         if (!string.IsNullOrWhiteSpace(result))
         {
-            await BlazorEssentials.Module.InvokeVoidAsync("sendBlobToDotNet", _ref, result);
+            await BlazorEssentials.Module.InvokeVoidAsync("sendBlobToDotNet", result, _ref);
             return new BlazorFileResult(result, ContentTypeResolver.Resolve(Path.GetFileName(result)), _data!);
         }
         return null;
@@ -56,7 +56,7 @@ internal class BlazorMediaPicker : IAvaeMediaPicker
         var result = await BlazorEssentials.Module.InvokeAsync<string>("capturePhotoInPopup");
         if (!string.IsNullOrWhiteSpace(result))
         {
-            await BlazorEssentials.Module.InvokeVoidAsync("sendBlobToDotNet", _ref, result);
+            await BlazorEssentials.Module.InvokeVoidAsync("sendBlobToDotNet", result, _ref);
             return new BlazorFileResult(result, ContentTypeResolver.Resolve(Path.GetFileName(result)), _data!);
         }
         return null;
@@ -65,7 +65,7 @@ internal class BlazorMediaPicker : IAvaeMediaPicker
     private static byte[]? _data;
 
     [JSInvokable]
-    public static void ReceiveBlobData(byte[] bytes)
+    public void ReceiveBlobData(byte[] bytes)
     {
         _data = bytes;
     }

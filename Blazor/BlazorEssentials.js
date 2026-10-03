@@ -280,7 +280,7 @@ export function captureVideoInPopup() {
 export async function sendBlobToDotNet(blobUrl, dotNetRef) {
 	const response = await fetch(blobUrl);
 	const buffer = await (await response.blob()).arrayBuffer();
-	dotNetRef.ReceiveBlobData(Array.from(new Uint8Array(buffer)));
+	await dotNetRef.invokeMethodAsync("ReceiveBlobData", new Uint8Array(buffer));
 }
 
 export const mediaCapture = {
