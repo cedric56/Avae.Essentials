@@ -1,9 +1,12 @@
 using Avalonia.Styling;
 using Microsoft.Maui.ApplicationModel;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.Versioning;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Application = Avalonia.Application;
 using Dispatcher = Avalonia.Threading.Dispatcher;

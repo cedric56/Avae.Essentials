@@ -1,4 +1,7 @@
-﻿namespace Avae.Essentials;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Avae.Essentials;
 
 // The following dictionary is derived from
 // Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider's default mappings.

@@ -1,4 +1,7 @@
-﻿namespace Avae.Essentials;
+﻿using System.IO;
+using System.Threading.Tasks;
+
+namespace Avae.Essentials;
 
 public interface IAvaeFileResult
 {

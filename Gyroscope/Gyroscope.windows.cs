@@ -1,5 +1,6 @@
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
+using System;
 using System.Runtime.Versioning;
 using Windows.Devices.Sensors;
 using Dispatcher = Avalonia.Threading.Dispatcher;

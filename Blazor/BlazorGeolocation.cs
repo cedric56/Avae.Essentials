@@ -1,6 +1,10 @@
 using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
+using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
@@ -68,15 +72,26 @@ public sealed class BlazorGeolocation : IGeolocation
         return _watchId >= 0;
     }
 
-    public async void StopListeningForeground()
+    public void StopListeningForeground()
     {
-        if (!IsListeningForeground)
-            return;
+        _ = StopListeningForegroundAsync();
+    }
 
-        var id = _watchId;
-        _watchId = -1;
-
-        await BlazorEssentials.Module.InvokeVoidAsync("geoWatchStop", id);
+    private async Task StopListeningForegroundAsync()
+    {
+        try
+        {
+            if (_watchId >= 0)
+            {
+                await BlazorEssentials.Module.InvokeVoidAsync("geoWatchStop", _watchId);
+                _watchId = -1;
+            }
+        }
+        catch (Exception ex)
+        {
+            _watchId = -1;
+            Debug.WriteLine(ex);
+        }
     }
 
     [JSInvokable]

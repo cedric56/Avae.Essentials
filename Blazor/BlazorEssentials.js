@@ -3,8 +3,313 @@
 // bound from C# with [JSImport]. All functions are plain ES module exports
 // with no dependencies.
 
-export function evalExpression(code) {
-	return globalThis.eval(code);
+// ---------- Media Picker -----------
+
+const IS_MOBILE = /Android|iPhone/i.test(navigator.userAgent);
+const VIDEO_SIZE = IS_MOBILE ? { width: 320, height: 240 } : { width: 640, height: 480 };
+
+const AUDIO_CONSTRAINTS = {
+	echoCancellation: true,
+	noiseSuppression: true,
+	autoGainControl: true
+};
+
+const VIDEO_MIME_CANDIDATES = [
+	"video/webm;codecs=vp8,opus",
+	"video/webm",
+	"video/mp4"
+];
+
+const OVERLAY_STYLE = {
+	position: "fixed",
+	top: "0",
+	left: "0",
+	width: "100%",
+	height: "100%",
+	background: "rgba(0,0,0,0.5)",
+	zIndex: "9999",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center"
+};
+
+const MODAL_STYLE = {
+	background: "#fff",
+	padding: "10px",
+	borderRadius: "8px",
+	width: "90%",
+	maxWidth: "480px",
+	textAlign: "center"
+};
+
+/* ---------- helpers ---------- */
+
+function stopStream(stream) {
+	stream?.getTracks().forEach(track => track.stop());
+}
+
+function show(el, display = "block") {
+	el.style.display = display;
+}
+
+function hide(el) {
+	el.style.display = "none";
+}
+
+function pickVideoMimeType() {
+	return VIDEO_MIME_CANDIDATES.find(type => MediaRecorder.isTypeSupported(type)) ?? "";
+}
+
+/**
+ * Builds the overlay + modal, mounts it, and wires up the shared
+ * "click outside / Escape to dismiss" behaviour.
+ * Returns the modal element, a `close(result)` function and the promise.
+ */
+function openPopup(innerHtml, { onClose } = {}) {
+	const overlay = document.createElement("div");
+	Object.assign(overlay.style, OVERLAY_STYLE);
+
+	const modal = document.createElement("div");
+	Object.assign(modal.style, MODAL_STYLE);
+	modal.innerHTML = innerHtml;
+
+	overlay.appendChild(modal);
+	document.body.appendChild(overlay);
+
+	let resolvePromise;
+	const promise = new Promise(resolve => (resolvePromise = resolve));
+	let closed = false;
+
+	const onKeyDown = e => { if (e.key === "Escape") close(null); };
+	const onBeforeUnload = () => close(null);
+
+	function close(result) {
+		if (closed) return;
+		closed = true;
+
+		onClose?.();
+		document.removeEventListener("keydown", onKeyDown);
+		window.removeEventListener("beforeunload", onBeforeUnload);
+		overlay.remove();
+		resolvePromise(result);
+	}
+
+	overlay.addEventListener("click", e => { if (e.target === overlay) close(null); });
+	document.addEventListener("keydown", onKeyDown);
+	window.addEventListener("beforeunload", onBeforeUnload);
+
+	const $ = selector => modal.querySelector(selector);
+	return { $, close, promise };
+}
+
+/** Requests the camera; returns the stream or null if denied/unavailable. */
+async function openCamera({ audio = false } = {}) {
+	try {
+		return await navigator.mediaDevices.getUserMedia({
+			video: VIDEO_SIZE,
+			...(audio ? { audio: AUDIO_CONSTRAINTS } : {})
+		});
+	} catch (err) {
+		console.error("Camera access denied:", err);
+		return null;
+	}
+}
+
+/* ---------- photo ---------- */
+
+export function capturePhotoInPopup() {
+	let stream = null;
+
+	const { $, close, promise } = openPopup(`
+        <canvas id="photoCanvas" style="display:none;"></canvas>
+        <div id="actionButtons" style="display:none; justify-content:center;">
+            <button id="acceptPhoto">✅ Accept</button>
+            <button id="rejectPhoto">❌ Reject</button>
+        </div>
+        <video id="videoPreview" autoplay playsinline style="width:100%; height:auto; border:1px solid #ccc;"></video>
+        <button id="takePhoto">📸 Take Photo</button>
+    `, { onClose: () => stopStream(stream) });
+
+	const video = $("#videoPreview");
+	const canvas = $("#photoCanvas");
+	const actions = $("#actionButtons");
+	const takeButton = $("#takePhoto");
+
+	function showPreview() {
+		hide(canvas);
+		hide(actions);
+		show(video);
+		show(takeButton);
+	}
+
+	function showCaptured() {
+		hide(video);
+		hide(takeButton);
+		show(canvas);
+		show(actions, "flex");
+	}
+
+	function takePhoto() {
+		if (!stream) return;
+
+		canvas.width = video.videoWidth;
+		canvas.height = video.videoHeight;
+		canvas.style.width = "100%";
+		canvas.style.height = "auto";
+		canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+
+		showCaptured();
+	}
+
+	function acceptPhoto() {
+		canvas.toBlob(blob => close(blob ? URL.createObjectURL(blob) : null), "image/png");
+	}
+
+	takeButton.addEventListener("click", takePhoto);
+	$("#acceptPhoto").addEventListener("click", acceptPhoto);
+	$("#rejectPhoto").addEventListener("click", showPreview);
+
+	openCamera().then(s => {
+		if (!s) return close(null);
+		stream = s;
+		video.srcObject = stream;
+	});
+
+	return promise;
+}
+
+/* ---------- video ---------- */
+
+export function captureVideoInPopup() {
+	let stream = null;
+	let recorder = null;
+	let chunks = [];
+	let mimeType = "";
+
+	const { $, close, promise } = openPopup(`
+        <video id="videoPreview" autoplay playsinline muted style="width:100%;"></video>
+        <video id="playbackPreview" style="display:none;width:100%;"></video>
+        <div id="recordingControls" style="margin-top:10px;">
+            <button id="startRecording">🎥 Start Recording</button>
+            <button id="stopRecording" disabled>⏹ Stop</button>
+        </div>
+        <div id="actionButtons" style="display:none; justify-content:center; margin-top:10px;">
+            <button id="acceptRecording">✅ Accept</button>
+            <button id="rejectRecording">❌ Reject</button>
+        </div>
+    `, { onClose: () => stopStream(stream) });
+
+	const preview = $("#videoPreview");
+	const playback = $("#playbackPreview");
+	const controls = $("#recordingControls");
+	const actions = $("#actionButtons");
+	const startButton = $("#startRecording");
+	const stopButton = $("#stopRecording");
+
+	const buildBlob = () => new Blob(chunks, { type: mimeType || "video/webm" });
+
+	async function startCamera() {
+		stream = await openCamera({ audio: true });
+		if (!stream) return close(null);
+		preview.srcObject = stream;
+	}
+
+	function startCapture() {
+		if (!stream) return;
+
+		startButton.disabled = true;
+		stopButton.disabled = false;
+		hide(actions);
+
+		chunks = [];
+		mimeType = pickVideoMimeType();
+		recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+		recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+		recorder.onstop = showPlayback;
+		recorder.start();
+	}
+
+	function stopCapture() {
+		if (recorder?.state !== "inactive") recorder?.stop();
+		stopStream(stream);
+		stopButton.disabled = true;
+		hide(controls);
+	}
+
+	function showPlayback() {
+		playback.src = URL.createObjectURL(buildBlob());
+		playback.controls = true;
+		playback.muted = false;
+		playback.autoplay = false;
+
+		hide(preview);
+		show(playback);
+		show(actions, "flex");
+	}
+
+	function acceptCapture() {
+		close(URL.createObjectURL(buildBlob()));
+	}
+
+	function rejectCapture() {
+		if (playback.src) URL.revokeObjectURL(playback.src);
+		playback.removeAttribute("src");
+		playback.muted = true;
+		chunks = [];
+
+		hide(playback);
+		hide(actions);
+		show(preview);
+		show(controls, "flex");
+		startButton.disabled = false;
+
+		startCamera(); // stream was stopped when recording ended
+	}
+
+	startButton.addEventListener("click", startCapture);
+	stopButton.addEventListener("click", stopCapture);
+	$("#acceptRecording").addEventListener("click", acceptCapture);
+	$("#rejectRecording").addEventListener("click", rejectCapture);
+
+	startCamera();
+	return promise;
+}
+
+/* ---------- .NET interop ---------- */
+
+export async function sendBlobToDotNet(blobUrl, dotNetRef) {
+	const response = await fetch(blobUrl);
+	const buffer = await (await response.blob()).arrayBuffer();
+	dotNetRef.ReceiveBlobData(Array.from(new Uint8Array(buffer)));
+}
+
+export const mediaCapture = {
+	sendBlobToDotNet,
+	capturePhotoInPopup,
+	captureVideoInPopup
+};
+
+// ---------- Contacts -----------
+
+export function getAllContactsAsync(multiple) {
+	return new Promise(async (resolve, reject) => {
+		if ('ContactsManager' in window) {
+
+			const opts = { multiple: multiple };
+			const contacts = await navigator.contacts.select(["name", "email", "tel", "address"], opts);
+			const contactsJson = contacts.map(voice => ({
+				name: voice.name,
+				email: voice.email,
+				tel: voice.tel,
+				address: voice.address,
+			}));
+			resolve(JSON.stringify(contactsJson, null, 2));
+			return;
+		}
+
+		resolve('');
+
+	});
 }
 
 // ---------- Preferences (localStorage) ----------
@@ -39,93 +344,6 @@ function base64ToBytes(base64) {
 }
 
 // ---------- Secure storage (AES-GCM via WebCrypto, key in IndexedDB) ----------
-
-// const CRYPTO_DB = 'maui-essentials';
-// const CRYPTO_STORE = 'crypto-keys';
-// const CRYPTO_KEY_ID = 'securestorage-aes-gcm';
-// let cachedCryptoKey = null;
-
-// function openCryptoDb() {
-// 	return new Promise((resolve, reject) => {
-// 		const req = globalThis.indexedDB.open(CRYPTO_DB, 1);
-// 		req.onupgradeneeded = () => req.result.createObjectStore(CRYPTO_STORE);
-// 		req.onsuccess = () => resolve(req.result);
-// 		req.onerror = () => reject(req.error);
-// 	});
-// }
-
-// async function getCryptoKey() {
-// 	if (cachedCryptoKey)
-// 		return cachedCryptoKey;
-// 	const db = await openCryptoDb();
-// 	try {
-// 		const existing = await new Promise((resolve, reject) => {
-// 			const tx = db.transaction(CRYPTO_STORE, 'readonly');
-// 			const rq = tx.objectStore(CRYPTO_STORE).get(CRYPTO_KEY_ID);
-// 			rq.onsuccess = () => resolve(rq.result);
-// 			rq.onerror = () => reject(rq.error);
-// 		});
-// 		if (existing) {
-// 			cachedCryptoKey = existing;
-// 			return existing;
-// 		}
-// 		// Non-extractable: the key material can never be read back out of the browser.
-// 		const key = await globalThis.crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-// 		await new Promise((resolve, reject) => {
-// 			const tx = db.transaction(CRYPTO_STORE, 'readwrite');
-// 			const rq = tx.objectStore(CRYPTO_STORE).put(key, CRYPTO_KEY_ID);
-// 			rq.onsuccess = () => resolve();
-// 			rq.onerror = () => reject(rq.error);
-// 		});
-// 		cachedCryptoKey = key;
-// 		return key;
-// 	} finally {
-// 		db.close();
-// 	}
-// }
-
-// function bytesToBase64(bytes) {
-// 	let binary = '';
-// 	const chunk = 0x8000;
-// 	for (let i = 0; i < bytes.length; i += chunk)
-// 		binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-// 	return btoa(binary);
-// }
-
-// function base64ToBytes(base64) {
-// 	const binary = atob(base64);
-// 	const bytes = new Uint8Array(binary.length);
-// 	for (let i = 0; i < binary.length; i++)
-// 		bytes[i] = binary.charCodeAt(i);
-// 	return bytes;
-// }
-
-// export async function secureSet(key, value) {
-// 	const cryptoKey = await getCryptoKey();
-// 	const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
-// 	const ciphertext = await globalThis.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(value));
-// 	const buf = new Uint8Array(iv.length + ciphertext.byteLength);
-// 	buf.set(iv);
-// 	buf.set(new Uint8Array(ciphertext), iv.length);
-// 	globalThis.localStorage.setItem(key, bytesToBase64(buf));
-// }
-
-// export async function secureGet(key) {
-// 	const stored = globalThis.localStorage.getItem(key);
-// 	if (stored === null)
-// 		return null;
-// 	try {
-// 		const buf = base64ToBytes(stored);
-// 		const iv = buf.subarray(0, 12);
-// 		const ciphertext = buf.subarray(12);
-// 		const cryptoKey = await getCryptoKey();
-// 		const plaintext = await globalThis.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ciphertext);
-// 		return new TextDecoder().decode(plaintext);
-// 	} catch {
-// 		// Key lost (e.g. IndexedDB cleared) or value corrupt — treat as missing.
-// 		return null;
-// 	}
-// }
 
 const SS_DB = "maui-securestorage";
 const SS_STORE = "keys";
@@ -231,7 +449,6 @@ export function getDeviceInfo() {
 	};
 }
 // ---------- Display ----------
-
 function ddGetInfo() {
 	const o = screen.orientation;
 	return {
@@ -247,12 +464,15 @@ let ddWakeLockRequested = false;
 
 async function ddAcquireWakeLock() {
 	if (!("wakeLock" in navigator)) return false;
+
 	try {
 		ddWakeLock = await navigator.wakeLock.request("screen");
-		ddWakeLock.addEventListener("release", () => { ddWakeLock = null; });
+		ddWakeLock.addEventListener("release", () => {
+			ddWakeLock = null;
+		});
 		return true;
 	} catch {
-		return false; // e.g. not a secure context, or document hidden
+		return false;
 	}
 }
 
@@ -262,11 +482,15 @@ function ddReleaseWakeLock() {
 }
 
 export function ddGetSnapshot() {
-	return { ...ddGetInfo(), wakeLockActive: ddWakeLock !== null };
+	return {
+		...ddGetInfo(),
+		wakeLockActive: ddWakeLock !== null
+	};
 }
 
 export async function ddSetWakeLock(dotNetRef, on) {
 	ddWakeLockRequested = on;
+
 	if (on) {
 		const ok = await ddAcquireWakeLock();
 		await dotNetRef.invokeMethodAsync("OnWakeLockChanged", ok);
@@ -276,28 +500,72 @@ export async function ddSetWakeLock(dotNetRef, on) {
 	}
 }
 
+// Keep the exact handlers so they can be removed later.
+let ddSubscription = null;
+
 export function ddSubscribe(dotNetRef) {
-	const notify = () => dotNetRef.invokeMethodAsync("OnDisplayChanged", ddGetInfo());
+	// Prevent duplicate subscriptions.
+	ddUnsubscribe();
+
+	const notify = () => {
+		dotNetRef
+			.invokeMethodAsync("OnDisplayChanged", ddGetInfo())
+			.catch(() => { });
+	};
+
+	const visibilityChanged = async () => {
+		// Wake locks are released by the browser when the page is hidden;
+		// re-request when the page becomes visible again.
+		if (
+			document.visibilityState === "visible" &&
+			ddWakeLockRequested &&
+			!ddWakeLock
+		) {
+			const ok = await ddAcquireWakeLock();
+
+			try {
+				await dotNetRef.invokeMethodAsync("OnWakeLockChanged", ok);
+			} catch {
+				// The .NET object may have been disposed while the request
+				// was in progress.
+			}
+		}
+	};
+
 	window.addEventListener("resize", notify);
 	screen.orientation?.addEventListener("change", notify);
+	document.addEventListener("visibilitychange", visibilityChanged);
 
-	document.addEventListener("visibilitychange", async () => {
-		// Wake locks are released by the browser when the page is hidden; re-request.
-		if (document.visibilityState === "visible" && ddWakeLockRequested && !ddWakeLock) {
-			const ok = await ddAcquireWakeLock();
-			await dotNetRef.invokeMethodAsync("OnWakeLockChanged", ok);
-		}
-	});
+	ddSubscription = {
+		notify,
+		visibilityChanged
+	};
 }
 
 export function ddUnsubscribe() {
+	if (ddSubscription) {
+		window.removeEventListener("resize", ddSubscription.notify);
+		screen.orientation?.removeEventListener(
+			"change",
+			ddSubscription.notify
+		);
+		document.removeEventListener(
+			"visibilitychange",
+			ddSubscription.visibilityChanged
+		);
+
+		ddSubscription = null;
+	}
+
+	ddWakeLockRequested = false;
 	ddReleaseWakeLock();
 }
 // ---------- Geolocation ----------
 
-function positionToJson(position) {
+function positionToPayload(position) {
 	const c = position.coords;
-	return JSON.stringify({
+
+	return {
 		latitude: c.latitude,
 		longitude: c.longitude,
 		accuracy: c.accuracy,
@@ -306,29 +574,51 @@ function positionToJson(position) {
 		heading: c.heading,
 		speed: c.speed,
 		timestamp: position.timestamp
-	});
+	};
 }
 
 export function geoGetCurrentPosition(enableHighAccuracy, timeoutMs) {
 	return new Promise((resolve, reject) => {
 		if (!globalThis.navigator.geolocation) {
-			reject(new Error('unsupported'));
+			reject(new Error("unsupported"));
 			return;
 		}
+
 		globalThis.navigator.geolocation.getCurrentPosition(
-			position => resolve(positionToJson(position)),
-			error => reject(new Error(error.code === 1 ? 'permission' : error.message)),
-			{ enableHighAccuracy: enableHighAccuracy, timeout: timeoutMs > 0 ? timeoutMs : Infinity, maximumAge: 0 });
+			position => resolve(positionToPayload(position)),
+			error => reject(
+				new Error(error.code === 1 ? "permission" : error.message)
+			),
+			{
+				enableHighAccuracy,
+				timeout: timeoutMs > 0 ? timeoutMs : Infinity,
+				maximumAge: 0
+			});
 	});
 }
 
-export function geoWatchStart(enableHighAccuracy, callback, errorCallback) {
+export function geoWatchStart(dotNetRef, enableHighAccuracy) {
 	if (!globalThis.navigator.geolocation)
 		return -1;
+
 	return globalThis.navigator.geolocation.watchPosition(
-		position => callback(positionToJson(position)),
-		error => errorCallback(error.code === 1 ? 'permission' : error.message),
-		{ enableHighAccuracy: enableHighAccuracy });
+		position => {
+			dotNetRef
+				.invokeMethodAsync(
+					"OnGeolocationChanged",
+					positionToPayload(position))
+				.catch(() => { });
+		},
+		error => {
+			dotNetRef
+				.invokeMethodAsync(
+					"OnGeolocationError",
+					error.code === 1 ? "permission" : error.message)
+				.catch(() => { });
+		},
+		{
+			enableHighAccuracy
+		});
 }
 
 export function geoWatchStop(watchId) {
@@ -340,14 +630,23 @@ export function geoWatchStop(watchId) {
 
 let batteryManager = null;
 
+const batterySubscriptions = new Map();
+
 async function batGetManager() {
-	if (!("getBattery" in navigator)) return null;
-	if (!batteryManager) batteryManager = await navigator.getBattery();
+	if (!("getBattery" in navigator))
+		return null;
+
+	if (!batteryManager)
+		batteryManager = await navigator.getBattery();
+
 	return batteryManager;
 }
 
 function batSnapshotOf(b) {
-	return { level: b.level, charging: b.charging };
+	return {
+		level: b.level,
+		charging: b.charging
+	};
 }
 
 export async function batGetSnapshot() {
@@ -357,10 +656,44 @@ export async function batGetSnapshot() {
 
 export async function batSubscribe(dotNetRef) {
 	const b = await batGetManager();
-	if (!b) return;
-	const notify = () => dotNetRef.invokeMethodAsync("OnBatteryChanged", batSnapshotOf(b));
+
+	if (!b)
+		return null;
+
+	// Prevent duplicate subscriptions for the same .NET reference.
+	await batUnsubscribe(dotNetRef);
+
+	const notify = () =>
+		dotNetRef.invokeMethodAsync(
+			"OnBatteryChanged",
+			batSnapshotOf(b)
+		).catch(() => {
+			// The .NET object may already have been disposed.
+		});
+
 	b.addEventListener("levelchange", notify);
 	b.addEventListener("chargingchange", notify);
+
+	batterySubscriptions.set(dotNetRef, {
+		battery: b,
+		notify
+	});
+
+	return true;
+}
+
+export async function batUnsubscribe(dotNetRef) {
+	const subscription = batterySubscriptions.get(dotNetRef);
+
+	if (!subscription)
+		return;
+
+	const { battery, notify } = subscription;
+
+	battery.removeEventListener("levelchange", notify);
+	battery.removeEventListener("chargingchange", notify);
+
+	batterySubscriptions.delete(dotNetRef);
 }
 
 // ---------- Vibration / haptics ----------
@@ -461,87 +794,140 @@ const DEG_TO_RAD = Math.PI / 180;
 const GRAVITY = 9.80665;
 const sensorHandlers = {};
 
-function orientationToQuaternionJson(e) {
+function orientationToQuaternion(e) {
 	const x = (e.beta || 0) * DEG_TO_RAD / 2;
 	const y = (e.gamma || 0) * DEG_TO_RAD / 2;
 	const z = (e.alpha || 0) * DEG_TO_RAD / 2;
+
 	const cX = Math.cos(x), cY = Math.cos(y), cZ = Math.cos(z);
 	const sX = Math.sin(x), sY = Math.sin(y), sZ = Math.sin(z);
-	return JSON.stringify({
+
+	return {
 		x: sX * cY * cZ - cX * sY * sZ,
 		y: cX * sY * cZ + sX * cY * sZ,
 		z: cX * cY * sZ + sX * sY * cZ,
 		w: cX * cY * cZ - sX * sY * sZ
-	});
+	};
 }
 
 export function sensorIsSupported(kind) {
 	switch (kind) {
-		case 'accelerometer':
-		case 'gyroscope':
-			return 'DeviceMotionEvent' in globalThis;
-		case 'orientation':
-		case 'compass':
-			return 'DeviceOrientationEvent' in globalThis;
+		case "accelerometer":
+		case "gyroscope":
+			return "DeviceMotionEvent" in globalThis;
+
+		case "orientation":
+		case "compass":
+			return "DeviceOrientationEvent" in globalThis;
+
 		default:
 			return false;
 	}
 }
 
-export async function sensorStart(kind, callback) {
+export async function sensorStart(dotNetRef, kind, frequencyHz) {
 	if (!sensorIsSupported(kind) || sensorHandlers[kind])
 		return false;
+
 	// iOS Safari requires an explicit permission request.
-	const eventCtor = kind === 'accelerometer' || kind === 'gyroscope'
-		? globalThis.DeviceMotionEvent : globalThis.DeviceOrientationEvent;
-	if (typeof eventCtor.requestPermission === 'function') {
+	const eventCtor =
+		kind === "accelerometer" || kind === "gyroscope"
+			? globalThis.DeviceMotionEvent
+			: globalThis.DeviceOrientationEvent;
+
+	if (typeof eventCtor.requestPermission === "function") {
 		const state = await eventCtor.requestPermission();
-		if (state !== 'granted')
+
+		if (state !== "granted")
 			return false;
 	}
-	let eventName, handler;
+
+	let eventName;
+	let handler;
+
+	const notify = payload =>
+		dotNetRef
+			.invokeMethodAsync("OnSensorChanged", kind, payload)
+			.catch(() => { });
+
 	switch (kind) {
-		case 'accelerometer':
-			eventName = 'devicemotion';
+		case "accelerometer":
+			eventName = "devicemotion";
 			handler = e => {
 				const a = e.accelerationIncludingGravity;
-				if (a)
-					callback(JSON.stringify({ x: (a.x || 0) / GRAVITY, y: (a.y || 0) / GRAVITY, z: (a.z || 0) / GRAVITY }));
+
+				if (a) {
+					notify({
+						x: (a.x || 0) / GRAVITY,
+						y: (a.y || 0) / GRAVITY,
+						z: (a.z || 0) / GRAVITY
+					});
+				}
 			};
 			break;
-		case 'gyroscope':
-			eventName = 'devicemotion';
+
+		case "gyroscope":
+			eventName = "devicemotion";
 			handler = e => {
 				const r = e.rotationRate;
-				if (r)
-					callback(JSON.stringify({ x: (r.beta || 0) * DEG_TO_RAD, y: (r.gamma || 0) * DEG_TO_RAD, z: (r.alpha || 0) * DEG_TO_RAD }));
+
+				if (r) {
+					notify({
+						x: (r.beta || 0) * DEG_TO_RAD,
+						y: (r.gamma || 0) * DEG_TO_RAD,
+						z: (r.alpha || 0) * DEG_TO_RAD
+					});
+				}
 			};
 			break;
-		case 'orientation':
-			eventName = 'deviceorientation';
-			handler = e => callback(orientationToQuaternionJson(e));
+
+		case "orientation":
+			eventName = "deviceorientation";
+			handler = e => notify(orientationToQuaternion(e));
 			break;
-		case 'compass':
-			eventName = 'ondeviceorientationabsolute' in globalThis ? 'deviceorientationabsolute' : 'deviceorientation';
+
+		case "compass":
+			eventName =
+				"ondeviceorientationabsolute" in globalThis
+					? "deviceorientationabsolute"
+					: "deviceorientation";
+
 			handler = e => {
-				// webkitCompassHeading is iOS Safari; otherwise derive from absolute alpha.
-				const heading = typeof e.webkitCompassHeading === 'number'
-					? e.webkitCompassHeading
-					: (e.absolute && e.alpha !== null ? (360 - e.alpha) % 360 : null);
+				const heading =
+					typeof e.webkitCompassHeading === "number"
+						? e.webkitCompassHeading
+						: (e.absolute && e.alpha !== null
+							? (360 - e.alpha) % 360
+							: null);
+
 				if (heading !== null)
-					callback(JSON.stringify({ heading: heading }));
+					notify({ heading });
 			};
 			break;
+
+		default:
+			return false;
 	}
-	sensorHandlers[kind] = { eventName, handler };
+
+	sensorHandlers[kind] = {
+		eventName,
+		handler
+	};
+
 	globalThis.addEventListener(eventName, handler);
+
 	return true;
 }
 
 export function sensorStop(kind) {
 	const entry = sensorHandlers[kind];
+
 	if (entry) {
-		globalThis.removeEventListener(entry.eventName, entry.handler);
+		globalThis.removeEventListener(
+			entry.eventName,
+			entry.handler
+		);
+
 		delete sensorHandlers[kind];
 	}
 }

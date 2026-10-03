@@ -1,5 +1,26 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_KernelRelease Condition="Exists('/proc/sys/kernel/osrelease')">$([System.IO.File]::ReadAllText('/proc/sys/kernel/osrelease').ToLowerInvariant())</_KernelRelease>
+  </PropertyGroup>
+  
   <ItemGroup Condition="'$(UsingMicrosoftNETSdkWeb)' == 'true' OR '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true'">
     <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Blazor\**\*.cs" Visible="false" />
   </ItemGroup>
+
+  <ItemGroup Condition="$(AvaeFeatures.Contains(';WSL;'))">    
+    <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\WSL\**\*.cs" Visible="false" />
+    <Compile Include="**\*.desktop.cs" />
+    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
+  </ItemGroup>
+
+  <Target Name="CopyBlazorAssets" BeforeTargets="BeforeCompile"
+        Condition="('$(UsingMicrosoftNETSdkWeb)' == 'true' OR '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true') AND Exists('$(MSBuildProjectDirectory)\wwwroot')">
+    <ItemGroup>
+      <_Assets Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Blazor\BlazorEssentials.js" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_Assets)"
+          DestinationFolder="$(MSBuildProjectDirectory)\wwwroot\"
+          SkipUnchangedFiles="true"
+          Condition="Exists('@(_Assets)')" />
+  </Target>
 </Project>

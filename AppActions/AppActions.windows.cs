@@ -1,7 +1,10 @@
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.UI.Xaml;
+using System;
+using System.Collections.Generic;
 using System.Runtime.Versioning;
 using System.Text;
+using System.Threading.Tasks;
 using Windows.UI.StartScreen;
 
 namespace Avae.Essentials;

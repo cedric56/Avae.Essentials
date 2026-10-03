@@ -1,4 +1,7 @@
 using Microsoft.Maui.Devices.Sensors;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 namespace Avae.Essentials;
 
 class AvaeGeocoding : IGeocoding

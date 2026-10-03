@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using Avalonia.Controls.ApplicationLifetimes;
+using System;
 using Application = Avalonia.Application;
 using Window = Avalonia.Controls.Window;
 

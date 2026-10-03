@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Accessibility;
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

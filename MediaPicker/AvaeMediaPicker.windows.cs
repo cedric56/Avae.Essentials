@@ -2,8 +2,12 @@
 using Avalonia.Controls.Maui.Essentials;
 using Microsoft.Maui.Media;
 using Microsoft.Maui.Storage;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Threading.Tasks;
 using Windows.Foundation.Collections;
 using Windows.Media.Capture;
 using Windows.Storage;

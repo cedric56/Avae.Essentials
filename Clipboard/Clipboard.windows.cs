@@ -1,6 +1,8 @@
 #nullable enable
 using Microsoft.Maui.ApplicationModel.DataTransfer;
+using System;
 using System.Runtime.Versioning;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using DataPackage = Windows.ApplicationModel.DataTransfer.DataPackage;
 

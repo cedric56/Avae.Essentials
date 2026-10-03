@@ -1,5 +1,6 @@
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices;
+using System;
 using System.Runtime.Versioning;
 using Windows.Devices.Haptics;
 using Windows.Foundation.Metadata;

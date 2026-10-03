@@ -1,4 +1,6 @@
 ﻿#nullable enable
+using System;
+
 namespace Avae.Essentials;
 
 class WindowMessageEventArgs : EventArgs

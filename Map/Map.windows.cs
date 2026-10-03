@@ -1,7 +1,9 @@
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
+using System;
 using System.Globalization;
 using System.Runtime.Versioning;
+using System.Threading.Tasks;
 using Windows.System;
 
 namespace Avae.Essentials;

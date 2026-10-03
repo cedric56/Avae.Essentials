@@ -2,16 +2,62 @@
 using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
+using Microsoft.Maui.Authentication;
 using Microsoft.Maui.Devices;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Media;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
+using System;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
 public static class BlazorEssentials
 {
-    private static string? _moduleUrl = string.Empty;
+    public static void UseBlazorEssentials(this IServiceCollection services)
+    {
+        var appInfo = new BlazorAppInfo();
+        var preferences = new BlazorPreferences();
+        services.SetDefaultsAndRegister(
+            new BlazorAccelerometer(),
+            new BlazorAppActions(),
+            appInfo,
+            new BlazorBarometer(),
+            new BlazorBattery(),
+            new BlazorBrowser(),
+            new BlazorClipboard(),
+            new BlazorCompass(),
+            new BlazorConnectivity(),
+            new BlazorContacts(),
+            new BlazorDeviceDisplay(),
+            new BlazorDeviceInfo(),
+            new BlazorEmail(),
+            new BlazorFilePicker(),
+            new BlazorFileSystem(),
+            new BlazorFlashlight(),
+            new BlazorGeocoding(),
+            new BlazorGeolocation(),
+            new BlazorGyroscope(),
+            new BlazorHapticFeedback(),
+            new BlazorLauncher(),
+            new BlazorMagnetometer(),
+            new BlazorMap(),
+            new BlazorMediaPicker(),
+            new BlazorOrientationSensor(),
+            new BlazorPhoneDialer(),
+            preferences,
+            new BlazorScreenshot(),
+            () => new BlazorSecureStorage(),
+            new BlazorSemanticScreenReader(),
+            new BlazorShare(),
+            new BlazorSms(),
+            new BlazorTextToSpeech(),
+            new BlazorVibration(),
+            WebAuthenticator.Default,
+            () => new BlazorVersionTracking(preferences, appInfo),
+            ServiceLifetime.Singleton);
+    }
 
     public static bool IsInitialized =>
         Module != null;
@@ -29,14 +75,11 @@ public static class BlazorEssentials
                 "before using Essentials APIs.");
     }
 
-    public static async Task InitializeAsync(
-       IServiceProvider provider,        
-       string moduleUrl)
+    public static async Task InitializeAsync(IServiceProvider provider)
     {
-        _moduleUrl = moduleUrl;
-
         var js = provider.GetRequiredService<IJSRuntime>();
 
+        Module?.DisposeAsync();
         Module = await InvokeCoreAsync(js);
 
         var connectivity = (BlazorConnectivity)provider.GetRequiredService<IConnectivity>();
@@ -80,6 +123,9 @@ public static class BlazorEssentials
 
         var share = (BlazorShare)provider.GetRequiredService<IShare>();
         await share.InitializeAsync();
+
+        var mediaPicker = (BlazorMediaPicker)provider.GetRequiredService<IMediaPicker>();
+        await mediaPicker.InitializeAsync();
     }
 
     internal static async Task<IJSObjectReference> InvokeCoreAsync(IJSRuntime js)
@@ -87,7 +133,7 @@ public static class BlazorEssentials
         if (js == null)
             throw new InvalidOperationException();
 
-        return await js.InvokeAsync<IJSObjectReference>("import", _moduleUrl)
+        return await js.InvokeAsync<IJSObjectReference>("import", "./BlazorEssentials.js")
                        .ConfigureAwait(false);
     }
 

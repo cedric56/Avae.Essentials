@@ -10,10 +10,8 @@
       net11.0-windows10.0.19041
     </TargetFrameworks>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!--<_KernelRelease Condition="Exists('/proc/sys/kernel/osrelease')">$([System.IO.File]::ReadAllText('/proc/sys/kernel/osrelease').ToLowerInvariant())</_KernelRelease>
-    <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux')) OR $([System.String]::Copy('$(_KernelRelease)').Contains('microsoft')) OR $([System.String]::Copy('$(_KernelRelease)').Contains('wsl'))">true</IsLinuxOS>-->
+    <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux'))">true</IsLinuxOS>
     <IsWindowsOS>$([MSBuild]::IsOSPlatform('Windows'))</IsWindowsOS>
     <IsAndroidTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-android'))</IsAndroidTFM>
     <IsIosTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-ios'))</IsIosTFM>
@@ -35,6 +33,7 @@
   <!-- Conditionally define the symbols -->
   <PropertyGroup>
     <DefineConstants Condition="'$(IsWindowsOS)' == 'true'">$(DefineConstants);WINDOWS_OS</DefineConstants>
+    <DefineConstants Condition="'$(IsLinuxOS)' == 'true'">$(DefineConstants);LINUX_OS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -45,6 +44,12 @@
     <Compile Remove="Blazor\**\*.*" />
     <TfmSpecificPackageFile Include="Blazor\**\*.*">
       <PackagePath>lib\$(TargetFramework)\Blazor\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </TfmSpecificPackageFile>
+
+    <Compile Remove="WSL\**\*.*" />
+    <TfmSpecificPackageFile Include="WSL\**\*.*">
+      <PackagePath>lib\$(TargetFramework)\WSL\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </TfmSpecificPackageFile>
   </ItemGroup>
@@ -79,11 +84,13 @@
     <PackageReference Include="Microsoft.Maui.Platforms.MacOS.Essentials" PrivateAssets="compile" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(IsLinuxOS)' == 'true'">
+    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
+  </ItemGroup>
     
   <ItemGroup>
-    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials"  />
     <PackageReference Include="Avalonia.Controls.Maui.Essentials" />
-    <!--<PackageReference Include="Microsoft.Maui.Essentials" />-->
+    <PackageReference Include="Microsoft.JSInterop" />
   </ItemGroup>
 
 </Project>

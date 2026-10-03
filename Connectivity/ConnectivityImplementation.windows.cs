@@ -1,5 +1,8 @@
 using Microsoft.Maui.Networking;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Runtime.Versioning;
 using Windows.Networking.Connectivity;
@@ -50,7 +53,7 @@ partial class ConnectivityImplementation : IConnectivity
 
     void OnConnectivityChanged(ConnectivityChangedEventArgs e)
     {
-        if (currentAccess != e.NetworkAccess || !currentProfiles.SequenceEqual(e.ConnectionProfiles))
+        if (currentAccess != e.NetworkAccess || !currentProfiles.SequenceEqual<ConnectionProfile>(e.ConnectionProfiles))
         {
             SetCurrent();
             Dispatcher.UIThread.Invoke(() => ConnectivityChangedInternal?.Invoke(null, e));

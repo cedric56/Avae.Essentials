@@ -1,5 +1,7 @@
 using Microsoft.JSInterop;
 using Microsoft.Maui.Devices;
+using System;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
@@ -7,7 +9,7 @@ namespace Avae.Essentials;
 /// Battery info backed by navigator.getBattery() (Battery Status API — Chromium only).
 /// Where the API is unavailable the state reads as Unknown with a full charge level.
 /// </summary>
-public sealed class BlazorBattery : IBattery, IDisposable
+public sealed class BlazorBattery : IBattery, IAsyncDisposable
 {
     public sealed record Snapshot(double Level, bool Charging);
 
@@ -44,9 +46,17 @@ public sealed class BlazorBattery : IBattery, IDisposable
         _powerSource = s.Charging ? BatteryPowerSource.AC : BatteryPowerSource.Battery;
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _ref?.Dispose();
+        if (_ref is not null)
+        {
+            await BlazorEssentials.Module.InvokeVoidAsync(
+                "batUnsubscribe",
+                _ref);
+
+            _ref.Dispose();
+            _ref = null;
+        }
     }
 
     // ───────────────────────── IBattery (sync, cached) ─────────────────────────

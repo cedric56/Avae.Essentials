@@ -1,4 +1,6 @@
-﻿namespace Avae.Essentials;
+﻿using System.Collections.Generic;
+
+namespace Avae.Essentials;
 
 public static class CountryResolver
 {

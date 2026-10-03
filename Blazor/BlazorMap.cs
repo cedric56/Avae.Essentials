@@ -1,5 +1,6 @@
 ﻿using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 

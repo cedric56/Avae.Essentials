@@ -12,6 +12,11 @@ using Microsoft.Maui.Dispatching;
 using Microsoft.Maui.Media;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
@@ -139,7 +144,51 @@ public static class Extensions
         EssentialsAccessors.SetTextToSpeech(null, textToSpeech);
         EssentialsAccessors.SetVibration(null, vibration);
         EssentialsAccessors.SetVersionTracking(null, versionTracking?.Invoke());
-
+    }
+    public static void SetDefaultsAndRegister(this IServiceCollection services,
+        IAccelerometer accelerometer,
+        IAppActions appActions,
+        IAppInfo appInfo,
+        IBarometer barometer,
+        IBattery battery,
+        IBrowser browser,
+        IClipboard clipboard,
+        ICompass compass,
+        IConnectivity connectivity,
+        IContacts contacts,
+        IDeviceDisplay deviceDisplay,
+        IDeviceInfo deviceInfo,
+        IEmail email,
+        IFilePicker filepicker,
+        IFileSystem fileSystem,
+        IFlashlight flashlight,
+        IGeocoding geocoding,
+        IGeolocation geolocation,
+        IGyroscope gyroscope,
+        IHapticFeedback hapticFeedback,
+        ILauncher launcher,
+        IMagnetometer magnetometer,
+        IMap map,
+        IMediaPicker mediaPicker,
+        IOrientationSensor orientationSensor,
+        IPhoneDialer phoneDialer,
+        IPreferences preferences,
+        IScreenshot screenshot,
+        Func<ISecureStorage> secureStorage,
+        ISemanticScreenReader semanticScreenReader,
+        IShare share,
+        ISms sms,
+        ITextToSpeech textToSpeech,
+        IVibration vibration,
+        IWebAuthenticator webAuthenticator,
+        Func<IVersionTracking> versionTracking,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+    {
+        services.SetDefaults(accelerometer, appActions, appInfo, barometer, battery, browser, clipboard, compass, connectivity,
+            contacts, deviceDisplay, deviceInfo, email, filepicker, fileSystem, flashlight, geocoding, geolocation,
+            gyroscope, hapticFeedback, launcher, magnetometer, map, mediaPicker, orientationSensor,
+            phoneDialer, preferences, screenshot, secureStorage, semanticScreenReader,
+            share, sms, textToSpeech, vibration, webAuthenticator, versionTracking, lifetime);
         services.RegisterEssentials(lifetime);
     }
 
@@ -215,9 +264,10 @@ public static class Extensions
         var fileSystem = new AvaloniaFileSystem();
         var webAuthenticator = (Microsoft.Maui.Authentication.IWebAuthenticator)AvaloniaDefaults.CreateAvaloniaWebAuthenticator(platformProvider);
 
+#if LINUX_OS
         if (OperatingSystem.IsLinux())
         {
-            services.SetDefaults(
+            services.SetDefaultsAndRegister(
                 new Microsoft.Maui.Platforms.Linux.Gtk4.Essentials.Sensors.LinuxAccelerometer(),
                 new Microsoft.Maui.Platforms.Linux.Gtk4.Essentials.AppModel.LinuxAppActions(),
                 new Microsoft.Maui.Platforms.Linux.Gtk4.Essentials.AppModel.LinuxAppInfo(),
@@ -255,8 +305,8 @@ public static class Extensions
                 webAuthenticator,
                 () => VersionTracking.Default);
         }
-#if MACOS
-        services.SetDefaults(
+#elif MACOS
+        services.SetDefaultsAndRegister(
             null!,
             null!,
             (Microsoft.Maui.ApplicationModel.IAppInfo)MacosDefaults.CreateAppInfo(),
@@ -295,7 +345,7 @@ public static class Extensions
             () => Microsoft.Maui.ApplicationModel.VersionTracking.Default);
 
 #elif WINDOWS_OS && !IOS && !ANDROID && !BROWSER
-        services.SetDefaults(
+        services.SetDefaultsAndRegister(
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new AccelerometerImplementation() : null!,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10586, 0) ? new AppActionsImplementation() : null!,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new AvaeAppInfo() : new AppInfoDefault(),
@@ -337,7 +387,7 @@ public static class Extensions
             webAuthenticator,
             () => Microsoft.Maui.ApplicationModel.VersionTracking.Default);
 #elif BROWSER
-        services.SetDefaults(
+        services.SetDefaultsAndRegister(
             null!,
             null!,
             new AppInfoDefault(),

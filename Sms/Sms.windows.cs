@@ -1,6 +1,9 @@
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.Communication;
+using System;
+using System.Collections.Generic;
 using System.Runtime.Versioning;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Chat;
 using Windows.Foundation.Metadata;
 

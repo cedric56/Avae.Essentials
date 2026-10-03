@@ -1,5 +1,8 @@
 using Microsoft.JSInterop;
 using Microsoft.Maui.Devices;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
@@ -53,14 +56,31 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
     }
 
     // ───────────────────────── internals ─────────────────────────
+    private Task? _ensureWatchingTask;
 
-    private async void EnsureWatching()
+    private void EnsureWatching()
     {
-        if (_watching) return;
-        _watching = true;        
-        _ref?.Dispose();
-        _ref = DotNetObjectReference.Create(this);
-        await BlazorEssentials.Module.InvokeVoidAsync("ddSubscribe", _ref);
+        _ensureWatchingTask ??= EnsureWatchingAsync();
+    }
+
+    private async Task EnsureWatchingAsync()
+    {
+        try
+        {
+            if (_watching) return;
+            _watching = true;
+            _ref?.Dispose();
+            _ref = DotNetObjectReference.Create(this);
+            await BlazorEssentials.Module.InvokeVoidAsync("ddSubscribe", _ref);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
+        finally
+        {
+            _ensureWatchingTask = null;
+        }
     }
 
     private async Task SetWakeLockAsync(bool on)
@@ -97,7 +117,9 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        _ref?.Dispose();
         await BlazorEssentials.Module.InvokeVoidAsync("ddUnsubscribe");
+
+        _ref?.Dispose();
+        _ref = null;
     }
 }

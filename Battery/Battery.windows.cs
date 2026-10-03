@@ -1,4 +1,5 @@
 using Microsoft.Maui.Devices;
+using System;
 using System.Runtime.Versioning;
 using Windows.System.Power;
 using Dispatcher = Avalonia.Threading.Dispatcher;

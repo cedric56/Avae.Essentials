@@ -1,6 +1,9 @@
 ﻿using Avae.Essentials;
 using Microsoft.JSInterop;
 using Microsoft.Maui.Networking;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 public sealed class BlazorConnectivity : IConnectivity, IAsyncDisposable
 {

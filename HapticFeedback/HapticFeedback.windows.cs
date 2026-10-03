@@ -1,4 +1,5 @@
 using Microsoft.Maui.Devices;
+using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using Windows.Devices.Haptics;

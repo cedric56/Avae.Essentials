@@ -2,6 +2,8 @@
 using Avalonia.Platform.Storage;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Storage;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 

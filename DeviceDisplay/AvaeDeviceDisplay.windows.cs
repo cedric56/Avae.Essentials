@@ -1,5 +1,6 @@
 #nullable enable
 using Microsoft.Maui.Devices;
+using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Windows.Graphics.Display;

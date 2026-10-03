@@ -1,5 +1,7 @@
 using Microsoft.JSInterop;
 using Microsoft.Maui.Devices;
+using System;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 

@@ -1,5 +1,6 @@
 ﻿#nullable enable
 
+using System;
 using Window = Avalonia.Controls.Window;
 
 namespace Avae.Essentials;

@@ -1,5 +1,6 @@
 ﻿using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel.Communication;
+using System;
 
 namespace Avae.Essentials;
 

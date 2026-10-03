@@ -1,6 +1,8 @@
 ﻿using Avalonia.Controls.Maui.Essentials;
 using Avalonia.Platform.Storage;
 using Microsoft.Maui.ApplicationModel.Communication;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 

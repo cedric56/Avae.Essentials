@@ -1,6 +1,8 @@
 #nullable enable
 using Microsoft.Maui.ApplicationModel;
+using System;
 using System.Runtime.Versioning;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 

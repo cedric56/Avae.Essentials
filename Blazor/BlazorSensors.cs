@@ -2,9 +2,12 @@ using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices;
 using Microsoft.Maui.Devices.Sensors;
+using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
@@ -74,15 +77,25 @@ public abstract class BlazorSensorBase(string kind)
         SensorSpeed.Default or _ => 5,
     };
 
-    public async void Stop()
+    public void Stop()
+    {
+        _ = StopAsync();
+    }
+
+    private async Task StopAsync()
     {
         if (!IsMonitoring)
             return;
 
         IsMonitoring = false;
+
         try
         {
             await BlazorEssentials.Module.InvokeVoidAsync("sensorStop", _kind);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
         }
         finally
         {

@@ -1,6 +1,9 @@
 using Microsoft.Maui.ApplicationModel.Communication;
 using Microsoft.Maui.Storage;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 

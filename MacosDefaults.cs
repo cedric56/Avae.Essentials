@@ -1,5 +1,7 @@
-﻿using Avalonia.Controls.Maui.Essentials;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Avae.Essentials;
 
@@ -144,19 +146,4 @@ static class MacosDefaults
     [UnsafeAccessor(UnsafeAccessorKind.Constructor)]
     [return: UnsafeAccessorType("Microsoft.Maui.Platforms.MacOS.Essentials.FileSystemImplementation, Microsoft.Maui.Platforms.MacOS.Essentials")]
     internal extern static object CreateFileSystem();
-}
-
-public static class AvaloniaDefaults
-{
-    [UnsafeAccessor(UnsafeAccessorKind.Constructor)]
-    [return: UnsafeAccessorType("Avalonia.Controls.Maui.Essentials.AvaloniaFilePicker, Avalonia.Controls.Maui.Essentials")]
-    internal extern static object CreateAvaloniaFilePicker(IAvaloniaEssentialsPlatformProvider provider);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Constructor)]
-    [return: UnsafeAccessorType("Avalonia.Controls.Maui.Essentials.AvaloniaMediaPicker, Avalonia.Controls.Maui.Essentials")]
-    internal extern static object CreateAvaloniaMediaPicker(IAvaloniaEssentialsPlatformProvider provider);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Constructor)]
-    [return: UnsafeAccessorType("Avalonia.Controls.Maui.Essentials.AvaloniaWebAuthenticator, Avalonia.Controls.Maui.Essentials")]
-    internal extern static object CreateAvaloniaWebAuthenticator(IAvaloniaEssentialsPlatformProvider provider);
 }
