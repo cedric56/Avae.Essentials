@@ -1,169 +1,218 @@
-> [!CAUTION]
-> **`Avae.Essentials` is not ready for production.**
->
-
 # Avae.Essentials
 
-Cross-platform **device & platform APIs** for the Avalonia, Maui and Blazor — sensors, connectivity, clipboard, geolocation, secure storage, share, and more.
-Useful on [Avae](https://github.com/cedric56/Avae.Abstractions) stack
+Cross-platform device, browser, and platform APIs for Avalonia, .NET MAUI, Blazor/WebAssembly, Windows, Android, iOS, macOS, and Linux hosts.
 
-API surface is intentionally close to **.NET MAUI Essentials**, so shared ViewModels can call the same capabilities on:
+The API surface intentionally follows **.NET MAUI Essentials** so shared Avae ViewModels can use the same abstractions across UI stacks.
 
-| Target | TFM examples |
-|--------|----------------|
-| Desktop / shared | `net11.0` |
-| Browser (WASM) | `net11.0-browser*` |
-| Android | `net11.0-android*` |
-| iOS / Mac Catalyst style | `net11.0-ios*` |
-| macOS | `net11.0-macos*` |
-| Windows | `net11.0-windows10.0.19041` |
+> **Status:** preview — version `1.0.0-preview.3`
+>
+> **Important:** platform availability below describes the implementation/packaging present in this repository. Browser APIs additionally depend on the browser's Web API support, permissions, secure-context rules, and user gestures. Native backend capabilities should still be verified on the target OS/device.
 
-> **Status:** preview (`1.0.0-preview.1`)
+## Targets
 
----
+| Platform / host | Target | Implementation source |
+|---|---|---|
+| Android | `net11.0-android` | MAUI Essentials backend |
+| iOS | `net11.0-ios` | MAUI Essentials backend |
+| macOS | `net11.0-macos` | MAUI macOS Essentials backend |
+| Windows | `net11.0-windows10.0.19041` | Avae Windows implementations |
+| Browser / Blazor WebAssembly | `net11.0-browser` | Avae Blazor + browser Web APIs |
+| Linux / Avalonia desktop | `net11.0` on Linux | Linux GTK4 Essentials backend |
+| Generic desktop | `net11.0` | Host-OS dependent |
 
 ## Install
 
 ```xml
-<PackageReference Include="Avae.Essentials" Version="1.0.0-preview.1" />
+<PackageReference Include="Avae.Essentials" Version="1.0.0-preview.3" />
 ```
 
-Platform packs are selected via multi-targeting. Prefer **ProjectReference** while developing against the Avae monorepo samples.
+For development inside the Avae monorepo, a `ProjectReference` is recommended.
 
----
-
-## Quick start
+Register the implementations with dependency injection:
 
 ```csharp
-using Avae.Essentials;
-using Microsoft.Extensions.DependencyInjection;
-
 services.UseEssentials();
 ```
 
-This registers the default platform implementations (and related accessors) for the current TFM.
-
-### Blazor / web host
-
-When the consuming project is a **web SDK** project (`UsingMicrosoftNETSdkWeb`), `build/Avae.Essentials.targets` can:
-
-- pull Blazor-oriented package references (sensors, clipboard, file system access, share, …);
-- compile optional sources under `Blazor/`.
+For a Blazor/Web host:
 
 ```csharp
-// typical Blazor host
-services.UseEssentials();
-// or host-specific helpers if exposed in your version (e.g. UseBlazorEssentials)
+services.UseBlazorEssentials();
+await BlazorEssentials.InitializeAsync(serviceProvider);
 ```
 
----
-
-## Capability areas
-
-Folders map roughly one-to-one with features (non-exhaustive):
-
-| Area | Examples |
-|------|----------|
-| **Sensors** | Accelerometer, Barometer, Compass, Gyroscope, Magnetometer, OrientationSensor |
-| **Device** | Battery, DeviceDisplay, DeviceInfo, Flashlight, HapticFeedback, Vibration |
-| **Network** | Connectivity |
-| **Data & storage** | Preferences, SecureStorage, FileSystem, FilePicker |
-| **Location** | Geolocation, Geocoding, Map |
-| **UI / OS integration** | Clipboard, Share, Launcher, Browser, Email, PhoneDialer, Screenshot, MediaPicker, Contacts, AppActions, AppInfo |
-| **A11y** | SemanticScreenReader |
-| **Permissions** | Permissions helpers |
-| **Platform** | Platform-specific wiring |
-
-Shared helpers also include:
-
-- **`EssentialsAccessors`** — static-style access patterns familiar from MAUI Essentials  
-- **`AvaeDispatcher`** — marshal work to the UI / main context when required  
-- **`ContentTypeResolver` / `CountryResolver`** — small utilities used by media and locale flows  
-- **`CircuitServiceAccessor`** — Blazor circuit / DI bridging when needed  
-
-Concrete interfaces for a subset of features live under `Interfaces/` (e.g. email, media picker, share, file results).
+The package's `buildTransitive` targets copy the Blazor JavaScript module into the consuming web application's `wwwroot` when appropriate.
 
 ---
 
-## Usage pattern
+# Platform capability matrix
 
-Prefer **constructor injection** of the abstractions your ViewModel needs (when registered), or the accessors registered by `UseEssentials`:
+### Legend
 
-```csharp
-public partial class EssentialsViewModel(/* injected essentials services */)
-{
-    public async Task ShareTextAsync()
-    {
-        // Same idea as MAUI Essentials Share / Clipboard / Geolocation, etc.
-        // Exact type names follow the package’s public API for your TFM.
-    }
-}
+- **Yes** — implementation is present for the target.
+- **Browser** — explicit Blazor implementation exists; actual availability depends on the browser.
+- **Backend** — delegated to the referenced platform Essentials package; OS/device support can vary.
+- **Limited** — implementation exists but the browser/platform cannot expose the full MAUI capability.
+- **No** — no implementation is exposed by the current target.
+
+| Functionality | Android | iOS | macOS | Windows | Browser / Blazor | Linux / Avalonia |
+|---|---|---|---|---|---|---|
+| Accelerometer | Backend | Backend | Backend | Yes | Browser | Backend |
+| App Actions | Backend | Backend | Backend | Yes | Browser | Backend |
+| App Info | Backend | Backend | Backend | Yes | Browser | Backend |
+| Barometer | Backend | Backend | Backend | Yes | Browser | Backend |
+| Battery | Backend | Backend | Backend | Yes | Browser | Backend |
+| Browser | Backend | Backend | Backend | Yes | Browser | Backend |
+| Clipboard | Backend | Backend | Backend | Yes | Browser | Backend |
+| Compass | Backend | Backend | Backend | Yes | Browser | Backend |
+| Connectivity | Backend | Backend | Backend | Yes | Browser | Backend |
+| Contacts | Backend | Backend | Backend | Yes | Browser | Limited — Contact Picker support varies |
+| Device Display | Backend | Backend | Backend | Yes | Browser | Backend |
+| Device Info | Backend | Backend | Backend | Yes | Browser | Backend |
+| Email | Backend | Backend | Backend | Yes | Browser | Backend |
+| File Picker | Backend | Backend | Backend | Yes | Browser | Backend |
+| File System | Backend | Backend | Backend | Yes | Browser | Backend |
+| Flashlight | Backend | Backend | Backend | Yes | Browser | Limited by browser APIs |
+| Geocoding | Backend | Backend | Backend | Yes | Browser | Backend |
+| Geolocation | Backend | Backend | Backend | Yes | Browser | Backend |
+| Gyroscope | Backend | Backend | Backend | Yes | Browser | Backend |
+| Haptic Feedback | Backend | Backend | Backend | Yes | Browser | Limited |
+| Launcher | Backend | Backend | Backend | Yes | Browser | Backend |
+| Magnetometer | Backend | Backend | Backend | Yes | Browser | Backend |
+| Map | Backend | Backend | Backend | Yes | Limited — maps app launch is unsupported | Backend |
+| Media Picker | Backend | Backend | Backend | Yes | Browser | Backend |
+| Orientation Sensor | Backend | Backend | Backend | Yes | Browser | Backend |
+| Permissions | Backend | Backend | Backend | Yes | No dedicated Blazor implementation | Backend |
+| Phone Dialer | Backend | Backend | Backend | Yes | Browser | Backend |
+| Preferences | Backend | Backend | Backend | Yes | Browser | Backend |
+| Screenshot | Backend | Backend | Backend | Yes | Browser | Backend |
+| Secure Storage | Backend | Backend | Backend | Yes | Browser | Limited — WebCrypto + IndexedDB/localStorage |
+| Semantic Screen Reader | Backend | Backend | Backend | Yes | Browser | Backend |
+| Share | Backend | Backend | Backend | Yes | Browser | Backend |
+| SMS | Backend | Backend | Backend | Yes | Browser | Browser-dependent protocol support |
+| Text to Speech | Backend | Backend | Backend | Yes | Browser | Browser/native backend dependent |
+| Version Tracking | Backend | Backend | Backend | Yes | Browser | Backend |
+| Vibration | Backend | Backend | Backend | Yes | Browser | Browser-dependent |
+| WSL helpers | No | No | No | Windows/WSL host | No | Linux/WSL host |
+
+### Browser implementation details
+
+The Blazor implementation currently contains explicit browser-backed implementations for:
+
+- App Actions
+- App Info
+- Barometer
+- Battery
+- Browser
+- Clipboard
+- Connectivity
+- Contacts
+- Device Display
+- Device Info
+- Email
+- File Picker
+- File System
+- Flashlight
+- Geocoding
+- Geolocation
+- Haptic Feedback
+- Launcher
+- Magnetometer
+- Media Picker
+- Phone Dialer
+- Preferences
+- Screenshot
+- Secure Storage
+- Semantic Screen Reader
+- Share
+- SMS
+- Text to Speech
+- Version Tracking
+- Vibration
+- Accelerometer
+- Compass
+- Gyroscope
+- Orientation Sensor
+
+Some browser capabilities are necessarily reduced compared with a native device. For example, map-app launching is explicitly unsupported, secure storage is best-effort WebCrypto storage, and sensor/location/camera APIs are subject to browser permissions and secure-context requirements.
+
+## API areas
+
+The source tree is organized by functionality:
+
+- **Sensors:** Accelerometer, Barometer, Compass, Gyroscope, Magnetometer, Orientation Sensor
+- **Device:** Battery, Device Display, Device Info, Flashlight, Haptic Feedback, Vibration
+- **Network:** Connectivity
+- **Storage:** Preferences, Secure Storage, File System, File Picker
+- **Location:** Geolocation, Geocoding, Map
+- **Communication:** Email, Phone Dialer, SMS, Contacts
+- **Media:** Media Picker, Screenshot
+- **Sharing / launching:** Share, Browser, Launcher
+- **Application:** App Actions, App Info, Version Tracking
+- **Accessibility:** Semantic Screen Reader
+- **Permissions:** Permissions
+- **Platform:** Platform and window helpers
+- **Browser:** Blazor implementations and JavaScript interop
+
+Shared helpers include `EssentialsAccessors`, `AvaeDispatcher`, `ContentTypeResolver`, `CountryResolver`, and Blazor circuit/DI helpers.
+
+## Browser requirements
+
+Browser-backed features can require:
+
+- HTTPS / a secure context.
+- A user gesture for APIs such as Web Share, camera access, and iOS motion/orientation permission.
+- Browser permission grants for location, camera, contacts, or sensors.
+- A browser that implements the corresponding Web API.
+
+Feature detection is used where practical, but browser support is not uniform across Chromium, Firefox, Safari, and embedded WebViews.
+
+## Known audit findings
+
+The current source audit has identified these concrete follow-ups:
+
+- **#3** — Blazor Essentials module/services mix process-global state with circuit-specific JavaScript state.
+- **#4** — Blazor Preferences still uses fire-and-forget `async void` persistence.
+- **#9** — Blazor geolocation watch callbacks use method names that do not exist on the C# implementation.
+- **#10** — Blazor sensor callbacks use a JavaScript/.NET signature that does not match.
+- **#11** — Blazor video capture currently calls the photo capture workflow.
+- **#12** — Blazor MediaPicker stores captured data in a static field.
+- **#13** — Blazor Text-to-Speech cancellation uses an effectively `async void` callback.
+- **#14** — Blazor Device Display has a first-use race between subscription and wake-lock setup.
+
+Earlier audit issues also cover the Blazor lifecycle, subscription cleanup, and global DI/static facade behavior.
+
+These are tracked as separate GitHub issues so fixes can be reviewed independently.
+
+## Development
+
+```bash
+dotnet build
+dotnet test
 ```
 
-Not every API is available on every platform (browser vs mobile vs desktop). Check `SupportedOSPlatform` attributes and runtime availability; some calls no-op or throw `FeatureNotSupportedException`-style errors depending on the implementation.
+The repository is multi-targeted; when validating a platform-specific feature, test the corresponding TFM and, for browser APIs, test the actual browser/device combination.
 
----
+## Relationship to .NET MAUI Essentials
 
-## Feature packaging notes
+Avae.Essentials intentionally follows MAUI Essentials concepts and interfaces while providing additional host implementations for Avae/Avalonia/Blazor scenarios.
 
-- **`build/Avae.Essentials.targets`** is shipped as **`buildTransitive`** (packed as `None`, not `Content`) to reduce Android **XA0101** issues.
-- Blazor-specific `.cs` files are excluded from the main compile and optionally included for web projects via the targets file.
-- Platform implementations use conditional compile (`*.android.cs`, `*.browser.cs`, `*.windows.cs`, `*.desktop.cs`, …) inside feature folders.
+If an application only targets MAUI, the official MAUI Essentials implementation remains the simpler choice. Avae.Essentials is intended for applications sharing ViewModels and service abstractions across multiple UI stacks.
 
----
+## Preview limitations
 
-## Relationship to MAUI Essentials
-
-| | MAUI Essentials | Avae.Essentials |
-|--|-----------------|-----------------|
-| API style | Static + interfaces | Closely aligned |
-| Hosts | MAUI | Avalonia, MAUI, Blazor, desktop, browser |
-| DI | Optional | `UseEssentials()` registration |
-| Goal | First-party MAUI | Shared Avae ViewModels across UI stacks |
-
-Use **MAUI Essentials** when you only ship MAUI. Use **Avae.Essentials** when the same code must run under Avalonia / Blazor / multi-host Avae samples.
-
----
-
-## Limitations (preview)
-
-- Surface area is large; maturity varies by platform and API.
-- Browser support depends on Web APIs / third-party Blazor packages pulled by the targets file.
-- Permissions and background behavior differ strongly between OS — always test on device.
-- Version is **preview**; expect API adjustments before 1.0.
-
----
+- This package is **preview** software.
+- Platform support varies by API.
+- Browser APIs are constrained by Web Platform security and permissions.
+- Native backend support can vary by OS version and hardware.
+- The capability matrix describes source-level availability; it is not a guarantee that every browser, device, or OS configuration supports every operation.
 
 ## License
 
 MIT — see [LICENSE.txt](LICENSE.txt).
 
----
+## Related projects
 
-## Related
-
-- [Avae.Abstractions](https://github.com/cedric56/Avae.Abstractions) — samples (`Example`, `Example.Maui`, `Example.BlazorAssembly`, …)
-- [Avae.Services](https://github.com/cedric56/Avae.Services) — UI service contracts (dialogs, notifications)
-- [Microsoft.Maui.Essentials](https://learn.microsoft.com/dotnet/maui/platform-integration/) — conceptual counterpart
-
-
----
-
-## Source audit (October 2026)
-
-A source-level audit of the current multi-platform implementation identified the following concrete follow-ups:
-
-1. **Blazor geolocation has C#/JavaScript contract mismatches.** The C# geolocation wrapper expects a structured payload while the JavaScript module returns a JSON string, and the watch-start arguments do not match the JavaScript function signature. See issue #1.
-2. **Blazor sensors do not call the JavaScript API with its declared signature.** The C# sensor base passes the .NET callback reference in the position occupied by the JavaScript `kind` argument, so monitoring can fail before callbacks are registered. See issue #2.
-3. **Blazor Essentials state is process-global while the JS module is host/circuit-specific.** `BlazorEssentials.Module` and several registered services are static/singleton state, which is unsafe for multi-circuit Blazor Server hosting. See issue #3.
-4. **Blazor preferences use `async void` persistence methods.** Storage failures outside the explicitly ignored disconnect case cannot be observed by callers and can surface as unhandled asynchronous exceptions. See issue #4.
-5. **Blazor display and sensor APIs also expose fire-and-forget `async void` control paths.** Stop/start/watch operations cannot be awaited or reliably observed for failures. See issue #5.
-6. **Blazor browser subscriptions are not consistently detached.** Battery and display subscriptions add browser event handlers, while their disposal paths do not remove those handlers, allowing duplicate callbacks and retained references after reinitialization/disposal. See issue #6.
-7. **The DI registration API mutates global MAUI static facades.** `SetDefaults` installs implementations into process-wide static accessors while also accepting an arbitrary DI lifetime, so scoped/transient registrations can diverge from the global facade state. See issue #7.
-
-These findings are tracked as separate GitHub issues so production-code fixes can be reviewed independently from this documentation update.
-
-## Validation
-
-The repository was inspected through GitHub. A local clone/build/test could not be completed because the execution environment could not resolve `github.com`; therefore this audit does not claim a successful local `dotnet build` or `dotnet test`.
-
+- [Avae.Abstractions](https://github.com/cedric56/Avae.Abstractions)
+- [Avae.Services](https://github.com/cedric56/Avae.Services)
+- [.NET MAUI Essentials](https://learn.microsoft.com/dotnet/maui/platform-integration/)
