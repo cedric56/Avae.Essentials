@@ -1,3 +1,5 @@
+# ⚠️ WARNING — NOT READY FOR PRODUCTION ⚠️
+
 # Avae.Essentials
 
 Cross-platform device, browser, and platform APIs for Avalonia, .NET MAUI, Blazor/WebAssembly, Windows, Android, iOS, macOS, and Linux hosts.
