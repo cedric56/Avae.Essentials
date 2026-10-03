@@ -1,6 +1,11 @@
+> [!CAUTION]
+> **`Avae.Essentials` is not ready for production.**
+>
+
 # Avae.Essentials
 
-Cross-platform **device & platform APIs** for the [Avae](https://github.com/cedric56/Avae.Abstractions) stack — sensors, connectivity, clipboard, geolocation, secure storage, share, and more.
+Cross-platform **device & platform APIs** for the Avalonia, Maui and Blazor — sensors, connectivity, clipboard, geolocation, secure storage, share, and more.
+Useful on [Avae](https://github.com/cedric56/Avae.Abstractions) stack
 
 API surface is intentionally close to **.NET MAUI Essentials**, so shared ViewModels can call the same capabilities on:
 
@@ -140,3 +145,25 @@ MIT — see [LICENSE.txt](LICENSE.txt).
 - [Avae.Abstractions](https://github.com/cedric56/Avae.Abstractions) — samples (`Example`, `Example.Maui`, `Example.BlazorAssembly`, …)
 - [Avae.Services](https://github.com/cedric56/Avae.Services) — UI service contracts (dialogs, notifications)
 - [Microsoft.Maui.Essentials](https://learn.microsoft.com/dotnet/maui/platform-integration/) — conceptual counterpart
+
+
+---
+
+## Source audit (October 2026)
+
+A source-level audit of the current multi-platform implementation identified the following concrete follow-ups:
+
+1. **Blazor geolocation has C#/JavaScript contract mismatches.** The C# geolocation wrapper expects a structured payload while the JavaScript module returns a JSON string, and the watch-start arguments do not match the JavaScript function signature. See issue #1.
+2. **Blazor sensors do not call the JavaScript API with its declared signature.** The C# sensor base passes the .NET callback reference in the position occupied by the JavaScript `kind` argument, so monitoring can fail before callbacks are registered. See issue #2.
+3. **Blazor Essentials state is process-global while the JS module is host/circuit-specific.** `BlazorEssentials.Module` and several registered services are static/singleton state, which is unsafe for multi-circuit Blazor Server hosting. See issue #3.
+4. **Blazor preferences use `async void` persistence methods.** Storage failures outside the explicitly ignored disconnect case cannot be observed by callers and can surface as unhandled asynchronous exceptions. See issue #4.
+5. **Blazor display and sensor APIs also expose fire-and-forget `async void` control paths.** Stop/start/watch operations cannot be awaited or reliably observed for failures. See issue #5.
+6. **Blazor browser subscriptions are not consistently detached.** Battery and display subscriptions add browser event handlers, while their disposal paths do not remove those handlers, allowing duplicate callbacks and retained references after reinitialization/disposal. See issue #6.
+7. **The DI registration API mutates global MAUI static facades.** `SetDefaults` installs implementations into process-wide static accessors while also accepting an arbitrary DI lifetime, so scoped/transient registrations can diverge from the global facade state. See issue #7.
+
+These findings are tracked as separate GitHub issues so production-code fixes can be reviewed independently from this documentation update.
+
+## Validation
+
+The repository was inspected through GitHub. A local clone/build/test could not be completed because the execution environment could not resolve `github.com`; therefore this audit does not claim a successful local `dotnet build` or `dotnet test`.
+
