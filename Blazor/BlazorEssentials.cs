@@ -19,7 +19,7 @@ public static class BlazorEssentials
     {
         var appInfo = new BlazorAppInfo();
         var preferences = new BlazorPreferences();
-        services.SetDefaultsAndRegister(
+        services.SetDefaults(
             new BlazorAccelerometer(),
             new BlazorAppActions(),
             appInfo,
@@ -57,6 +57,8 @@ public static class BlazorEssentials
             WebAuthenticator.Default,
             () => new BlazorVersionTracking(preferences, appInfo),
             ServiceLifetime.Singleton);
+
+        services.RegisterEssentials();
     }
 
     public static bool IsInitialized =>

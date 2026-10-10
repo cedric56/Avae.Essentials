@@ -1,5 +1,4 @@
-﻿using Avalonia.Controls.Maui.Essentials;
-using Microsoft.JSInterop;
+﻿using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Storage;
@@ -79,10 +78,7 @@ public class BlazorShare : IAvaeShare
         foreach (var file in files)
         {
             // Check if the file is an Avalonia-specific file result
-            if (file is AvaloniaFileResult f)
-                // Wrap it with the Avalonia adapter for proper handling
-                shareFiles.Add(new AvaeShareFile(f));
-            else if (file is BlazorFileResult b)
+            if (file is BlazorFileResult b)
                 shareFiles.Add(new AvaeShareFile(b));
             else
                 // Use standard MAUI ShareFile for regular files
