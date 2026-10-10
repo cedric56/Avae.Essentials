@@ -81,6 +81,8 @@ public static class BlazorEssentials
 
         Module?.DisposeAsync();
         Module = await InvokeCoreAsync(js);
+        if (Module == null)
+            return;
 
         var connectivity = (BlazorConnectivity)provider.GetRequiredService<IConnectivity>();
         await connectivity.InitializeAsync();
@@ -130,9 +132,24 @@ public static class BlazorEssentials
         if (js == null)
             throw new InvalidOperationException();
 
-        return await js.InvokeAsync<IJSObjectReference>("import", "./BlazorEssentials.js")
-                       .ConfigureAwait(false);
+        try
+        {
+            return await js.InvokeAsync<IJSObjectReference>("import", "./BlazorEssentials.js")
+                           .ConfigureAwait(false);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return null!;
+        }
+#else
+        catch
+        {
+            return null!;
+        }
+#endif
     }
 
-   internal  static IJSObjectReference Module { get; set; } = null!;
+    internal  static IJSObjectReference Module { get; set; } = null!;
 }

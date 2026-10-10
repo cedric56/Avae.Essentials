@@ -1,5 +1,6 @@
 ﻿using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel.Communication;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -14,14 +15,44 @@ public class BlazorContacts : IContacts
 {
     public async Task<IEnumerable<Contact>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var result = await BlazorEssentials.Module.InvokeAsync<string>("getAllContactsAsync", true);
-        return Parse(result);
+        try
+        { 
+            var result = await BlazorEssentials.Module.InvokeAsync<string>("getAllContactsAsync", true);
+            return Parse(result);   
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return Parse(string.Empty);
+        }
+#else
+        catch
+        {
+            return Parse(string.Empty);
+        }
+#endif
     }
 
     public async Task<Contact?> PickContactAsync()
     {
-        var result = await BlazorEssentials.Module.InvokeAsync<string>("getAllContactsAsync", false);
-        return Parse(result).FirstOrDefault();
+        try
+        { 
+            var result = await BlazorEssentials.Module.InvokeAsync<string>("getAllContactsAsync", false);
+            return Parse(result).FirstOrDefault();
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return Parse(string.Empty).FirstOrDefault();
+        }
+#else
+        catch
+        {
+            return Parse(string.Empty).FirstOrDefault();
+        }
+#endif
     }
 
     private static List<Contact> Parse(string result)
@@ -30,7 +61,7 @@ public class BlazorContacts : IContacts
         {
             var contacts = new List<Contact>();
 
-            var results = JsonSerializer.Deserialize(result, BlazorJsonSerializerContext.Default.ListContactsResponseInterop);
+            var results = JsonSerializer.Deserialize(result, AvaeJsonSerializerContext.Default.ListContactsResponseInterop);
 
             if (results is null)
             {
@@ -51,19 +82,4 @@ public class BlazorContacts : IContacts
         }
         return [];
     }
-}
-
-public class ContactsResponseInterop
-{
-    [JsonPropertyName("name")]
-    public List<string>? Name { get; set; }
-
-    [JsonPropertyName("email")]
-    public List<string>? Email { get; set; }
-
-    [JsonPropertyName("tel")]
-    public List<string>? Tel { get; set; }
-
-    [JsonPropertyName("address")]
-    public List<string>? Address { get; set; }
 }

@@ -23,19 +23,47 @@ public class BlazorShare : IAvaeShare
 
     public async Task InitializeAsync()
     {
-        _isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("shareIsSupported");
+        try
+        {
+            _isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("shareIsSupported");
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     public async Task RequestAsync(ShareTextRequest request)
     {
-        if(!IsSupported)
-            throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
+        try
+        {
+            if (!IsSupported)
+                throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
 
-        await BlazorEssentials.Module.InvokeVoidAsync("share", request.Title, request.Text, request.Uri).ConfigureAwait(false);
+            await BlazorEssentials.Module.InvokeVoidAsync("share", request.Title, request.Text, request.Uri).ConfigureAwait(false);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     public Task RequestAsync(ShareFileRequest request) =>
-        ShareFilesAsync(request.Title, request.File is null ? [] : [request.File]);
+        ShareFilesAsync(request.Title, request.File is null ? [] : new List<ShareFile>() { request.File });
 
     public Task RequestAsync(ShareMultipleFilesRequest request) =>
         ShareFilesAsync(request.Title, request.Files ?? []);
@@ -70,8 +98,7 @@ public class BlazorShare : IAvaeShare
     }
 
     async Task ShareFilesAsync(string? title, IReadOnlyList<ShareFile> files)
-    {
-        if (!IsSupported)
+    {if (!IsSupported)
             throw new FeatureNotSupportedException("The Web Share API is not available in this browser.");
         if (files.Count == 0)
             throw new ArgumentException("No files were provided to share.");
@@ -93,15 +120,26 @@ public class BlazorShare : IAvaeShare
         {
             await BlazorEssentials.Module.InvokeVoidAsync("shareFiles",
                     title,
-                    JsonSerializer.Serialize(names),
-                    JsonSerializer.Serialize(types),
-                    JsonSerializer.Serialize(contents)).ConfigureAwait(false);
+                    JsonSerializer.Serialize(names, AvaeJsonSerializerContext.Default.ListString),
+                    JsonSerializer.Serialize(types, AvaeJsonSerializerContext.Default.ListString),
+                    JsonSerializer.Serialize(contents, AvaeJsonSerializerContext.Default.ListString)).ConfigureAwait(false);
 
         }
         catch (Exception ex) when (ex.Message.Contains("unsupported", StringComparison.OrdinalIgnoreCase))
         {
             throw new FeatureNotSupportedException("This browser cannot share files via the Web Share API.");
+        }       
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
         }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 }
 

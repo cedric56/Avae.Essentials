@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Dispatcher = Avalonia.Threading.Dispatcher;
+using DispatcherTimer = Avalonia.Threading.DispatcherTimer;
+using DispatcherPriority = Avalonia.Threading.DispatcherPriority;
 
 namespace Avae.Essentials;
 
@@ -10,19 +13,19 @@ public class AvaeDispatcher : IDispatcher
     private static IDispatcher? dispatcher;
     public static IDispatcher Default => dispatcher ?? Microsoft.Maui.Dispatching.Dispatcher.GetForCurrentThread() ?? throw new ArgumentNullException(nameof(dispatcher));
 
-    public static void Initialize(Avalonia.Threading.Dispatcher avaloniaDispatcher)
+    public static void Initialize(Dispatcher avaloniaDispatcher)
     {
         dispatcher = new AvaeDispatcher(avaloniaDispatcher);
     }
 
-    private readonly Avalonia.Threading.Dispatcher _avaloniaDispatcher;
+    private readonly Dispatcher _avaloniaDispatcher;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AvaeDispatcher"/> class.
     /// </summary>
     /// <param name="avaloniaDispatcher">The Avalonia dispatcher instance to wrap.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="avaloniaDispatcher"/> is null.</exception>
-    private AvaeDispatcher(Avalonia.Threading.Dispatcher avaloniaDispatcher)
+    private AvaeDispatcher(Dispatcher avaloniaDispatcher)
     {
         _avaloniaDispatcher = avaloniaDispatcher ?? throw new ArgumentNullException(nameof(avaloniaDispatcher));
     }
@@ -61,8 +64,9 @@ public class AvaeDispatcher : IDispatcher
 
         _avaloniaDispatcher.Post(() =>
         {
-            Avalonia.Threading.DispatcherTimer.RunOnce(action, delay, Avalonia.Threading.DispatcherPriority.Normal);
-        }, Avalonia.Threading.DispatcherPriority.Normal);
+            DispatcherTimer.RunOnce(action, delay, DispatcherPriority.Normal);
+
+        }, DispatcherPriority.Normal);
         return true;
     }
 
@@ -81,18 +85,18 @@ public class AvaeDispatcher : IDispatcher
 /// </summary>
 public class AvaloniaDispatcherTimer : IDispatcherTimer
 {
-    private readonly Avalonia.Threading.DispatcherTimer _avaloniaTimer;
-    private readonly Avalonia.Threading.Dispatcher _dispatcher;
+    private readonly DispatcherTimer _avaloniaTimer;
+    private readonly Dispatcher _dispatcher;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AvaloniaDispatcherTimer"/> class.
     /// </summary>
     /// <param name="dispatcher">The Avalonia dispatcher instance.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dispatcher"/> is null.</exception>
-    public AvaloniaDispatcherTimer(Avalonia.Threading.Dispatcher dispatcher)
+    public AvaloniaDispatcherTimer(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-        _avaloniaTimer = new Avalonia.Threading.DispatcherTimer(Avalonia.Threading.DispatcherPriority.Normal);
+        _avaloniaTimer = new DispatcherTimer(DispatcherPriority.Normal);
         _avaloniaTimer.Tick += OnTick;
     }
 

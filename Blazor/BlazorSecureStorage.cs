@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
@@ -34,11 +35,25 @@ public sealed class BlazorSecureStorage : ISecureStorage
     /// <summary>Loads the set of existing keys (not values). Idempotent. Call once at startup.</summary>
     public async Task InitializeAsync()
     {
-        var keys = await BlazorEssentials.Module.InvokeAsync<string[]>("secureKeys", KeyPrefix)
-            .ConfigureAwait(false);
+        try
+        {
+            var keys = await BlazorEssentials.Module.InvokeAsync<string[]>("secureKeys", KeyPrefix)
+                .ConfigureAwait(false);
 
-        foreach (var k in keys ?? [])
-            _knownKeys[k] = 0;
+            foreach (var k in keys ?? [])
+                _knownKeys[k] = 0;
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     public async Task<string?> GetAsync(string key)
@@ -54,6 +69,18 @@ public sealed class BlazorSecureStorage : ISecureStorage
             return await BlazorEssentials.Module.InvokeAsync<string?>("secureGet", storageKey)
                 .ConfigureAwait(false);
         }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return string.Empty;
+        }
+#else
+        catch
+        {
+            return string.Empty;
+        }
+#endif
         finally
         {
             gate.Release();
@@ -73,6 +100,17 @@ public sealed class BlazorSecureStorage : ISecureStorage
 
             _knownKeys[storageKey] = 0;
         }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
         finally
         {
             gate.Release();
@@ -117,12 +155,17 @@ public sealed class BlazorSecureStorage : ISecureStorage
             await BlazorEssentials.Module.InvokeVoidAsync("secureRemove", storageKey)
                 .ConfigureAwait(false);
         }
-        catch (JSDisconnectedException)
+#if DEBUG
+        catch (Exception ex)
         {
-            // Circuit is gone; nothing more we can do. The key is already
-            // removed from _knownKeys, so a later re-initialize will pick up
-            // reality from localStorage again.
+            System.Diagnostics.Debug.WriteLine(ex);
         }
+#else
+        catch
+        {
+
+        }
+#endif
         finally
         {
             gate.Release();

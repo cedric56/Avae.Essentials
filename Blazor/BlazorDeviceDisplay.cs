@@ -27,12 +27,26 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
 
     public async Task InitializeAsync()
     {
-        var snapshot = await BlazorEssentials.Module.InvokeAsync<Snapshot?>("ddGetSnapshot");
-        if (snapshot is not null)
-        {
-            Apply(snapshot.Width, snapshot.Height, snapshot.PixelRatio, snapshot.OrientationType);
-            _wakeLockActive = snapshot.WakeLockActive;
+        try
+        { 
+            var snapshot = await BlazorEssentials.Module.InvokeAsync<Snapshot?>("ddGetSnapshot");
+            if (snapshot is not null)
+            {
+                Apply(snapshot.Width, snapshot.Height, snapshot.PixelRatio, snapshot.OrientationType);
+                _wakeLockActive = snapshot.WakeLockActive;
+            }
         }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     // ───────────────────────── IDeviceDisplay ─────────────────────────
@@ -72,11 +86,18 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
             _ref?.Dispose();
             _ref = DotNetObjectReference.Create(this);
             await BlazorEssentials.Module.InvokeVoidAsync("ddSubscribe", _ref);
-        }
+        }        
+#if DEBUG
         catch (Exception ex)
         {
-            Debug.WriteLine(ex);
+            System.Diagnostics.Debug.WriteLine(ex);
         }
+#else
+        catch
+        {
+
+        }
+#endif
         finally
         {
             _ensureWatchingTask = null;
@@ -86,7 +107,21 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
     private async Task SetWakeLockAsync(bool on)
     {
         EnsureWatching();
-        await BlazorEssentials.Module.InvokeVoidAsync("ddSetWakeLock", _ref, on);
+        try
+        { 
+            await BlazorEssentials.Module.InvokeVoidAsync("ddSetWakeLock", _ref, on);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     [JSInvokable]
@@ -117,8 +152,21 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await BlazorEssentials.Module.InvokeVoidAsync("ddUnsubscribe");
+        try
+        { 
+            await BlazorEssentials.Module.InvokeVoidAsync("ddUnsubscribe");
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
 
+        }
+#endif
         _ref?.Dispose();
         _ref = null;
     }

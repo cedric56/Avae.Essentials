@@ -37,11 +37,25 @@ public sealed class BlazorPreferences : IPreferences
     /// </summary>
     public async Task InitializeAsync()
     {
-        var all = await BlazorEssentials.Module.InvokeAsync<Dictionary<string, string>>("prefsGetAll", KeyPrefix)
-            .ConfigureAwait(false);
+        try
+        {
+            var all = await BlazorEssentials.Module.InvokeAsync<Dictionary<string, string>>("prefsGetAll", KeyPrefix)
+                .ConfigureAwait(false);
 
-        foreach (var (k, v) in all ?? [])
-            _cache[k] = v;
+            foreach (var (k, v) in all ?? [])
+                _cache[k] = v;
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     public bool ContainsKey(string key, string? sharedName = null)
@@ -118,8 +132,18 @@ public sealed class BlazorPreferences : IPreferences
         {
             await BlazorEssentials.Module.InvokeVoidAsync("prefsSet", storageKey, value)
                 .ConfigureAwait(false);
+        }        
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
         }
-        catch (JSDisconnectedException) { }
+#else
+        catch
+        {
+
+        }
+#endif
         finally
         {
             gate.Release();
@@ -135,7 +159,17 @@ public sealed class BlazorPreferences : IPreferences
             await BlazorEssentials.Module.InvokeVoidAsync("prefsRemove", storageKey)
                 .ConfigureAwait(false);
         }
-        catch (JSDisconnectedException) { }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
         finally
         {
             gate.Release();

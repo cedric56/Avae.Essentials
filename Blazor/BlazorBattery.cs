@@ -22,12 +22,26 @@ public sealed class BlazorBattery : IBattery, IAsyncDisposable
     /// <summary>Imports the module, loads the initial snapshot, and subscribes to changes. Idempotent.</summary>
     public async Task InitializeAsync()
     {
-        var snapshot = await BlazorEssentials.Module.InvokeAsync<Snapshot?>("batGetSnapshot");
-        if (snapshot is not null)
-            Apply(snapshot);
-        _ref?.Dispose();
-        _ref = DotNetObjectReference.Create(this);
-        await BlazorEssentials.Module.InvokeVoidAsync("batSubscribe", _ref);
+        try
+        {
+            var snapshot = await BlazorEssentials.Module.InvokeAsync<Snapshot?>("batGetSnapshot");
+            if (snapshot is not null)
+                Apply(snapshot);
+            _ref?.Dispose();
+            _ref = DotNetObjectReference.Create(this);
+            await BlazorEssentials.Module.InvokeVoidAsync("batSubscribe", _ref);
+        }        
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     [JSInvokable]
@@ -50,10 +64,23 @@ public sealed class BlazorBattery : IBattery, IAsyncDisposable
     {
         if (_ref is not null)
         {
-            await BlazorEssentials.Module.InvokeVoidAsync(
+            try
+            { 
+                await BlazorEssentials.Module.InvokeVoidAsync(
                 "batUnsubscribe",
                 _ref);
+            }
+#if DEBUG
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
+#else
+        catch
+        {
 
+        }
+#endif
             _ref.Dispose();
             _ref = null;
         }

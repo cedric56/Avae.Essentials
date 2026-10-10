@@ -12,18 +12,17 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <Nullable>enable</Nullable>
     <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux'))">true</IsLinuxOS>
-    <IsWindowsOS>$([MSBuild]::IsOSPlatform('Windows'))</IsWindowsOS>
+    <IsWindowsOS>$([MSBuild]::IsOSPlatform('windows'))</IsWindowsOS>
     <IsAndroidTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-android'))</IsAndroidTFM>
     <IsIosTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-ios'))</IsIosTFM>
     <IsMacTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-macos'))</IsMacTFM>
     <IsBrowserTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-browser'))</IsBrowserTFM>
     <IsWindowsTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-windows'))</IsWindowsTFM>
-    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
+    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors-->
     <IsAotCompatible>true</IsAotCompatible>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Version>1.0.0-preview.3</Version>
-    <AvaloniaNameGeneratorIsEnabled>false</AvaloniaNameGeneratorIsEnabled>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -47,9 +46,8 @@
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </TfmSpecificPackageFile>
 
-    <Compile Remove="WSL\**\*.*" />
-    <TfmSpecificPackageFile Include="WSL\**\*.*">
-      <PackagePath>lib\$(TargetFramework)\WSL\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+    <TfmSpecificPackageFile Include="**\*.avalonia.cs">
+      <PackagePath>lib\$(TargetFramework)\Avalonia\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </TfmSpecificPackageFile>
   </ItemGroup>
@@ -57,21 +55,16 @@
   <!-- Start clean -->
   <ItemGroup>
     <Compile Remove="**\*.browser.cs" />
-    <Compile Remove="**\*.windows.cs" />
-    <Compile Remove="**\*.desktop.cs" />
+    <Compile Remove="**\*.avalonia.cs" />
   </ItemGroup>
 
   <!-- Windows -->
   <ItemGroup Condition="'$(IsWindowsOS)' == 'true' AND '$(IsBrowserTFM)' != 'true' AND '$(IsMacTFM)' != 'true' AND '$(IsAndroidTFM)' != 'true' AND '$(IsIosTFM)' != 'true' AND '$(IsLinuxOS)' != 'true' AND '$(IsWindowsTFM)' != 'true'">
-    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" PrivateAssets="compile" />
-    <Compile Include="**\*.windows.cs" />
-    <Compile Include="**\*.desktop.cs" />
+    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsWindowsTFM)' == 'true'">
-    <PackageReference Include="Microsoft.WindowsAppSDK" PrivateAssets="compile" />
-    <Compile Include="**\*.windows.cs" />
-    <Compile Include="**\*.desktop.cs" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
   <!-- Browser -->
@@ -81,16 +74,14 @@
 
   <!-- macOS -->
   <ItemGroup Condition="'$(IsMacTFM)' == 'true'">
-    <PackageReference Include="Microsoft.Maui.Platforms.MacOS.Essentials" PrivateAssets="compile" />
+    <PackageReference Include="Microsoft.Maui.Platforms.MacOS.Essentials" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsLinuxOS)' == 'true'">
     <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
   </ItemGroup>
-    
-  <ItemGroup>
-    <PackageReference Include="Avalonia.Controls.Maui.Essentials" />
-    <PackageReference Include="Microsoft.JSInterop" />
-  </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Essentials" />
+  </ItemGroup>
 </Project>

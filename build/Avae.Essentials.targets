@@ -1,16 +1,26 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <_KernelRelease Condition="Exists('/proc/sys/kernel/osrelease')">$([System.IO.File]::ReadAllText('/proc/sys/kernel/osrelease').ToLowerInvariant())</_KernelRelease>
+    <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux'))">true</IsLinuxOS>
+    <IsWindowsOS Condition="$([MSBuild]::IsOSPlatform('windows'))">true</IsWindowsOS>
+    <IsAndroidTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-android'))</IsAndroidTFM>
+    <IsIosTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-ios'))</IsIosTFM>
+    <IsMacTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-macos'))</IsMacTFM>
+    <IsBrowserTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-browser'))</IsBrowserTFM>
+    <IsWindowsTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-windows'))</IsWindowsTFM>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(UsingMicrosoftNETSdkWeb)' == 'true' OR '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true'">
     <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Blazor\**\*.cs" Visible="false" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(AvaeFeatures.Contains(';WSL;'))">    
-    <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\WSL\**\*.cs" Visible="false" />
-    <Compile Include="**\*.desktop.cs" />
+  <ItemGroup Condition="$(AvaeFeatures.Contains(';AVALONIA;'))">
+    <PackageReference Include="Avalonia.Controls.Maui.Essentials"/>
+    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" />
+    <PackageReference Condition="$(IsMacTFM) == 'true'" 
+                      Include="Microsoft.Maui.Platforms.MacOS.Essentials" />
     <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Avalonia\**\*.avalonia.cs" Visible="false" />      
   </ItemGroup>
 
   <Target Name="CopyBlazorAssets" BeforeTargets="BeforeCompile"

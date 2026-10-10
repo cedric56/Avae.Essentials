@@ -70,16 +70,20 @@ partial class AvaeSemanticScreenReader : ISemanticScreenReader
 
     [DllImport("UIAutomationCore.dll", CharSet = CharSet.Unicode)]
     private static extern int UiaRaiseNotificationEvent(
-IRawElementProviderSimple provider,
-AutomationNotificationKind notificationKind,
-AutomationNotificationProcessing notificationProcessing,
-[MarshalAs(UnmanagedType.BStr)] string displayString,
-[MarshalAs(UnmanagedType.BStr)] string activityId);
+    IRawElementProviderSimple provider,
+    AutomationNotificationKind notificationKind,
+    AutomationNotificationProcessing notificationProcessing,
+    [MarshalAs(UnmanagedType.BStr)] string displayString,
+    [MarshalAs(UnmanagedType.BStr)] string activityId);
 
     [DllImport("UIAutomationCore.dll")]
-    public static extern int UiaHostProviderFromHwnd(IntPtr hwnd, [MarshalAs(UnmanagedType.Interface)] out IRawElementProviderSimple provider);
+    private static extern int UiaHostProviderFromHwnd(
+        IntPtr hwnd,
+        [MarshalAs(UnmanagedType.Interface)]
+    out IRawElementProviderSimple provider);
 
-    public class SimpleNotificationProvider(IRawElementProviderSimple simple) : IRawElementProviderSimple
+    public class SimpleNotificationProvider(       
+        IRawElementProviderSimple simple) : IRawElementProviderSimple
     {
         public ProviderOptions ProviderOptions => ProviderOptions.ServerSideProvider;
 

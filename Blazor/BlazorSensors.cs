@@ -37,7 +37,21 @@ public abstract class BlazorSensorBase(string kind)
     /// <summary>Imports the module and checks browser support. Idempotent.</summary>
     public async Task InitializeAsync()
     {
-        _isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("sensorIsSupported", _kind);
+        try
+        {
+            _isSupported = await BlazorEssentials.Module.InvokeAsync<bool>("sensorIsSupported", _kind);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     private protected async Task StartCoreAsync(SensorSpeed sensorSpeed)
@@ -56,10 +70,18 @@ public abstract class BlazorSensorBase(string kind)
         {
             started = await BlazorEssentials.Module.InvokeAsync<bool>("sensorStart", _ref, _kind, frequencyHz);
         }
-        catch (JSDisconnectedException)
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            started = false;
+        }
+#else
+        catch
         {
             started = false;
         }
+#endif
 
         IsMonitoring = started;
         if (!started)
@@ -93,10 +115,17 @@ public abstract class BlazorSensorBase(string kind)
         {
             await BlazorEssentials.Module.InvokeVoidAsync("sensorStop", _kind);
         }
+#if DEBUG
         catch (Exception ex)
         {
-            Debug.WriteLine(ex);
+            System.Diagnostics.Debug.WriteLine(ex);
         }
+#else
+        catch
+        {
+
+        }
+#endif
         finally
         {
             _ref?.Dispose();

@@ -12,16 +12,67 @@ namespace Avae.Essentials;
 public class BlazorLauncher : ILauncher
 {
     internal static async Task<bool> OpenUrlAsync(string url)
-    => await BlazorEssentials.Module.InvokeAsync<bool>("openUrl", url);
+    {
+        try
+        {
+            return await BlazorEssentials.Module.InvokeAsync<bool>("openUrl", url);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return false;
+        }
+#else
+        catch
+        {
+            return false;
+        }
+#endif
+    }
 
     internal static async Task<bool> NavigateToAsync(string url)
-     => await BlazorEssentials.Module.InvokeAsync<bool>("navigateTo", url);
+    {
+        try
+        {
+            return await BlazorEssentials.Module.InvokeAsync<bool>("navigateTo", url);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return false;
+        }
+#else
+        catch
+        {
+            return false;
+        }
+#endif
+    }
 
     internal static async Task<bool> OpenFileBlobAsync(string base64, string? contentType, string name)
-    => await BlazorEssentials.Module.InvokeAsync<bool>("openFileBlob", base64, contentType, name);
+    {
+        try
+        {
+            return await BlazorEssentials.Module.InvokeAsync<bool>("openFileBlob", base64, contentType, name);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return false;
+        }
+#else
+        catch
+        {
+            return false;
+        }
+#endif
+    }
 
 
-    static readonly string[] NavigationSchemes = ["mailto", "tel", "sms"];
+        static readonly string[] NavigationSchemes = ["mailto", "tel", "sms"];
 
     public Task<bool> CanOpenAsync(Uri uri) =>
         Task.FromResult(uri.Scheme is "http" or "https" || NavigationSchemes.Contains(uri.Scheme));

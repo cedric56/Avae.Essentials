@@ -11,7 +11,6 @@ public class AvaePlatform
             return true;
 #else
             return false;
-
 #endif
         }
 

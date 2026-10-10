@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+namespace Avae.Essentials;
 public sealed class BlazorConnectivity : IConnectivity, IAsyncDisposable
 {
     public sealed record BrowserState(bool Online, string Type, bool SaveData);
@@ -19,12 +20,26 @@ public sealed class BlazorConnectivity : IConnectivity, IAsyncDisposable
     // Idempotent: safe to call from several places.
     public async Task InitializeAsync()
     {
-        var snapshot = await BlazorEssentials.Module.InvokeAsync<BrowserState?>("connectivityGetSnapshot");
-        if (snapshot is not null)
-            Apply(snapshot, false);
-        _ref?.Dispose();
-        _ref = DotNetObjectReference.Create(this);
-        await BlazorEssentials.Module.InvokeVoidAsync("connectivitySubscribe", _ref);
+        try
+        {
+            var snapshot = await BlazorEssentials.Module.InvokeAsync<BrowserState?>("connectivityGetSnapshot");
+            if (snapshot is not null)
+                Apply(snapshot, false);
+            _ref?.Dispose();
+            _ref = DotNetObjectReference.Create(this);
+            await BlazorEssentials.Module.InvokeVoidAsync("connectivitySubscribe", _ref);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     [JSInvokable]
@@ -60,6 +75,20 @@ public sealed class BlazorConnectivity : IConnectivity, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _ref?.Dispose();
-        await BlazorEssentials.Module.InvokeVoidAsync("connectivityUnsubscribe");
+        try
+        { 
+            await BlazorEssentials.Module.InvokeVoidAsync("connectivityUnsubscribe");   
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 }

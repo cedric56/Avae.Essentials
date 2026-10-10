@@ -1,5 +1,6 @@
 ﻿using Microsoft.JSInterop;
 using Microsoft.Maui.Accessibility;
+using System;
 
 namespace Avae.Essentials;
 
@@ -8,7 +9,21 @@ public class BlazorSemanticScreenReader : ISemanticScreenReader
 {
     public async void Announce(string text)
     {
-        BlazorEssentials.EnsureInitialized();
-        await BlazorEssentials.Module.InvokeVoidAsync("announce", text);
+        try
+        {
+            BlazorEssentials.EnsureInitialized();
+            await BlazorEssentials.Module.InvokeVoidAsync("announce", text);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 }

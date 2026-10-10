@@ -28,7 +28,7 @@ public sealed class BlazorGeolocation : IGeolocation
 
     public Task<Location?> GetLastKnownLocationAsync() => Task.FromResult(_lastKnownLocation);
 
-    public async Task<Location?> GetLocationAsync(GeolocationRequest request, CancellationToken cancelToken = default)
+    public async Task<Location?> GetLocationAsync(Microsoft.Maui.Devices.Sensors.GeolocationRequest request, CancellationToken cancelToken = default)
     {
         cancelToken.ThrowIfCancellationRequested();
         try
@@ -48,17 +48,28 @@ public sealed class BlazorGeolocation : IGeolocation
         catch (JSException ex) when (ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase))
         {
             return null; // matches MAUI's behavior of returning null on timeout
+        }       
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
         }
+#else
+        catch
+        {
+
+        }
+#endif
         return null;
     }
 
-    public async Task<bool> StartListeningForegroundAsync(GeolocationListeningRequest request)
+    public async Task<bool> StartListeningForegroundAsync(Microsoft.Maui.Devices.Sensors.GeolocationListeningRequest request)
     {
         if (IsListeningForeground)
             throw new InvalidOperationException("Already listening for location changes.");
 
         _ref = DotNetObjectReference.Create(this);
-        var highAccuracy = request.DesiredAccuracy is GeolocationAccuracy.Best or GeolocationAccuracy.High;
+        var highAccuracy = request.DesiredAccuracy is Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.Best or Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.High;
 
         try
         {
@@ -67,7 +78,19 @@ public sealed class BlazorGeolocation : IGeolocation
         catch (JSDisconnectedException)
         {
             _watchId = -1;
+        }       
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            _watchId = -1;
         }
+#else
+        catch
+        {
+            _watchId = -1;
+        }
+#endif
 
         return _watchId >= 0;
     }
@@ -87,11 +110,18 @@ public sealed class BlazorGeolocation : IGeolocation
                 _watchId = -1;
             }
         }
+#if DEBUG
         catch (Exception ex)
         {
             _watchId = -1;
-            Debug.WriteLine(ex);
+            System.Diagnostics.Debug.WriteLine(ex);
         }
+#else
+        catch
+        {
+            _watchId = -1;
+        }
+#endif
     }
 
     [JSInvokable]
@@ -114,8 +144,8 @@ public sealed class BlazorGeolocation : IGeolocation
         ListeningFailed?.Invoke(this, new GeolocationListeningFailedEventArgs(error));
     }
 
-    private static bool UseHighAccuracy(GeolocationRequest request) =>
-        request.DesiredAccuracy is GeolocationAccuracy.Best or GeolocationAccuracy.High;
+    private static bool UseHighAccuracy(Microsoft.Maui.Devices.Sensors.GeolocationRequest request) =>
+        request.DesiredAccuracy is Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.Best or Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.High;
 
     private static Location ToLocation(Payload p) => new(p.Latitude, p.Longitude)
     {

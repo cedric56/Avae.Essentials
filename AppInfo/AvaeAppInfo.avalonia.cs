@@ -39,6 +39,10 @@ class AvaeAppInfo : IAppInfo
             OnActiveWindowThemeChanged();
     }
 
+    public static string PackagedName => AppInfoUtils.IsPackagedApp
+        ? Package.Current.Id.Name
+        : _launchingAssembly.GetAppInfoValue("PackageName") ?? _launchingAssembly.GetCustomAttribute<AssemblyTitleAttribute>()?.Title ?? string.Empty;
+
     public string PackageName => AppInfoUtils.IsPackagedApp
         ? Package.Current.Id.Name
         : _launchingAssembly.GetAppInfoValue("PackageName") ?? _launchingAssembly.GetCustomAttribute<AssemblyTitleAttribute>()?.Title ?? string.Empty;

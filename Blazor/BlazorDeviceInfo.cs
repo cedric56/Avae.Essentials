@@ -26,9 +26,23 @@ public sealed class BlazorDeviceInfo : IDeviceInfo
     /// <summary>Fetches and caches the device info. Idempotent. Must complete before any property is read.</summary>
     public async Task InitializeAsync()
     {
-        var raw = await BlazorEssentials.Module.InvokeAsync<DeviceInfoJson>("getDeviceInfo");
-        if (raw is not null)
-            _info = Parse(raw);
+        try
+        {
+            var raw = await BlazorEssentials.Module.InvokeAsync<DeviceInfoJson>("getDeviceInfo");
+            if (raw is not null)
+                _info = Parse(raw);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     private static Info Parse(DeviceInfoJson raw)

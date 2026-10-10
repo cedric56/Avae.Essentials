@@ -9,11 +9,10 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Avae.Everywhere
+namespace Avae.Essentials
 {
     partial class TextToSpeechImplementation : ITextToSpeech
     {
-
         private static Dictionary<string, string> localeToCountry = new Dictionary<string, string>
 {
     { "af-ZA", "South Africa" },
@@ -222,29 +221,5 @@ namespace Avae.Everywhere
 
             return Task.CompletedTask;
         }
-    }
-
-    [JsonSerializable(typeof(TextToSpeechResponseInterop))]
-    [JsonSerializable(typeof(IEnumerable<TextToSpeechResponseInterop>))]
-    internal partial class AvaeJsonSerializerContext : JsonSerializerContext
-    {
-    }
-
-    internal class TextToSpeechResponseInterop
-    {
-        [JsonPropertyName("name")]
-        public string? Name { get; set; }
-
-        [JsonPropertyName("lang")]
-        public string? Lang { get; set; }
-
-        [JsonPropertyName("default")]
-        public bool Default { get; set; }
-
-        [JsonPropertyName("voiceURI")]
-        public string? VoiceURI { get; set; }
-
-        [JsonPropertyName("localService")]
-        public bool LocalService { get; set; }
     }
 }

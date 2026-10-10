@@ -27,13 +27,28 @@ public sealed class BlazorAppInfo : IAppInfo, IAsyncDisposable
     private AppTheme _requestedTheme = AppTheme.Light;
 
     public async Task InitializeAsync()
-    {        
-        var snapshot = await BlazorEssentials.Module.InvokeAsync<AppInfoSnapshot>("appInfoGet");
-        if (snapshot != null)
-            Apply(snapshot);
-        _ref?.Dispose();
-        _ref = DotNetObjectReference.Create(this);
-        await BlazorEssentials.Module.InvokeVoidAsync("appInfoSubscribeTheme", _ref);
+    {
+        try
+        {
+            var snapshot = await BlazorEssentials.Module.InvokeAsync<AppInfoSnapshot>("appInfoGet");
+            if (snapshot != null)
+                Apply(snapshot);
+            _ref?.Dispose();
+            _ref = DotNetObjectReference.Create(this);
+            await BlazorEssentials.Module.InvokeVoidAsync("appInfoSubscribeTheme", _ref);
+        }        
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
+
     }
 
     [JSInvokable]
@@ -68,6 +83,20 @@ public sealed class BlazorAppInfo : IAppInfo, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _ref?.Dispose();
-        await BlazorEssentials.Module.InvokeVoidAsync("appInfoUnsubscribeTheme");
+        try
+        {
+            await BlazorEssentials.Module.InvokeVoidAsync("appInfoUnsubscribeTheme");
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 }

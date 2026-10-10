@@ -27,14 +27,28 @@ public class BlazorTextToSpeech : ITextToSpeech
     {
         cancelToken.ThrowIfCancellationRequested();
 
-        using var registration = cancelToken.CanBeCanceled
-            ? cancelToken.Register(async () => { 
-                await BlazorEssentials.Module.InvokeVoidAsync("speechCancel"); 
-            })
-            : default;
-
         try
+        { 
+            using var registration = cancelToken.CanBeCanceled
+                ? cancelToken.Register(async () => {
+                    try
+                    {
+                        await BlazorEssentials.Module.InvokeVoidAsync("speechCancel");
+                    }
+#if DEBUG
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+                    catch
+                    {
+
+                    }
+#endif
+                })
+                : default;
+
             await BlazorEssentials.Module.InvokeVoidAsync("speak", text,
                 options?.Locale?.Language,
                 options?.Pitch ?? -1,
@@ -45,6 +59,17 @@ public class BlazorTextToSpeech : ITextToSpeech
         {
             throw new FeatureNotSupportedException("The Web Speech API is not available in this browser.");
         }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
         cancelToken.ThrowIfCancellationRequested();
     }
 }

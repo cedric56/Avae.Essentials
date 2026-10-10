@@ -21,15 +21,44 @@ public class BlazorClipboard : IClipboard
 
     public async Task SetTextAsync(string? text)
     {
+        try
+        { 
         await BlazorEssentials.Module.InvokeVoidAsync("clipboardWriteText", text ?? string.Empty).ConfigureAwait(false);
         lastKnownHasText = !string.IsNullOrEmpty(text);
         ClipboardContentChanged?.Invoke(this, EventArgs.Empty);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 
     public async Task<string?> GetTextAsync()
     {
-        var text = await BlazorEssentials.Module.InvokeAsync<string?>("clipboardReadText").ConfigureAwait(false);
-        lastKnownHasText = !string.IsNullOrEmpty(text);
-        return string.IsNullOrEmpty(text) ? null : text;
+        try
+        { 
+            var text = await BlazorEssentials.Module.InvokeAsync<string?>("clipboardReadText").ConfigureAwait(false);
+            lastKnownHasText = !string.IsNullOrEmpty(text);
+            return string.IsNullOrEmpty(text) ? null : text;
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return string.Empty;
+        }
+#else
+        catch
+        {
+            return string.Empty;
+        }
+#endif
     }
 }

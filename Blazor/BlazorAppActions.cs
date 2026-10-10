@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
-
 /// <summary>App shortcuts have no web equivalent.</summary>
 public class BlazorAppActions : IAppActions
 {
