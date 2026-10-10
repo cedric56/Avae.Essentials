@@ -128,7 +128,7 @@ public static class Extensions
         EssentialsAccessors.SetEmail(null, email);
         EssentialsAccessors.SetFlashlight(null, flashlight);
         EssentialsAccessors.SetGeocoding(null, geocoding);
-        EssentialsAccessors.SetGeocolation(null, geolocation);
+        EssentialsAccessors.SetGeolocation(null, geolocation);
         EssentialsAccessors.SetGyroscope(null, gyroscope);
         EssentialsAccessors.SetLauncher(null, launcher);
         EssentialsAccessors.SetMagnetometer(null, magnetometer);
@@ -162,7 +162,7 @@ public static class Extensions
         services.TryAdd(ServiceDescriptor.Describe(typeof(IClipboard), _ => Clipboard.Default, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(ICompass), _ => Compass.Default, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(IConnectivity), _ => Connectivity.Current, lifetime));
-        //services.TryAdd(ServiceDescriptor.Describe(typeof(IContacts), _ =>  Contacts.Default, lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IContacts), _ => Microsoft.Maui.ApplicationModel.Communication.Contacts.Default, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(IDeviceDisplay), _ => DeviceDisplay.Current, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(IDeviceInfo), _ => DeviceInfo.Current, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(IEmail), _ => Email.Default, lifetime));

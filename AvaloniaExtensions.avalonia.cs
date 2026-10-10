@@ -33,7 +33,7 @@ public static class AvaloniaExtensions
             services.SetDefaults(
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new AccelerometerImplementation() : null!,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10586, 0) ? new AppActionsImplementation() : null!,
-            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new AvaeAppInfo() : new AppInfoDefault(),
+            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new AvaeAppInfo() : null!,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new BarometerImplementation() : null!,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new BatteryImplementation() : null!,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new BrowserImplementation() : null!,
@@ -237,29 +237,5 @@ public static class AvaloniaExtensions
 
         services.TryAdd(ServiceDescriptor.Describe(typeof(IDispatcher), _ => AvaeDispatcher.Default, ServiceLifetime.Singleton));
         services.RegisterEssentials();
-    }
-
-    class AppInfoDefault : IAppInfo
-    {
-        public string PackageName => string.Empty;
-
-        public string Name => string.Empty;
-
-        public string VersionString => string.Empty;
-
-        public Version Version => null!;
-
-        public string BuildString => string.Empty;
-
-        public AppTheme RequestedTheme => AppTheme.Unspecified;
-
-        public AppPackagingModel PackagingModel => AppPackagingModel.Unpackaged;
-
-        public LayoutDirection RequestedLayoutDirection => LayoutDirection.Unknown;
-
-        public void ShowSettingsUI()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

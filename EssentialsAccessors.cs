@@ -104,7 +104,7 @@ public static class EssentialsAccessors
         IGeocoding? implementation);
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "SetDefault")]
-    public static extern void SetGeocolation(
+    public static extern void SetGeolocation(
         [UnsafeAccessorType("Microsoft.Maui.Devices.Sensors.Geolocation, Microsoft.Maui.Essentials")] object? facade,
         IGeolocation? implementation);
 
