@@ -159,7 +159,7 @@ public static class AvaloniaExtensions
             services.SetDefaults(
                 null!,
                 null!,
-                new AppInfoDefault(),
+                null!,
                 null!,
                 null!,
                 null!,
@@ -199,7 +199,7 @@ public static class AvaloniaExtensions
             services.SetDefaults(
                 null!,
                 null!,
-                new AppInfoDefault(),
+                null!,
                 null!,
                 null!,
                 null!,
