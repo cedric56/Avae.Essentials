@@ -1261,8 +1261,9 @@ export function sensorStop(kind) {
 
 	if (entry) {
 
-		if (magSensor !== null) {
+		if (kind === "magnetometer" && magSensor !== null) {
 			magSensor.removeEventListener(entry.eventName, entry.handler);
+			magSensor = null;
 		}
 		else {
 			globalThis.removeEventListener(
