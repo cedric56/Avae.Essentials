@@ -11,7 +11,7 @@ using PositionChangedEventArgs = Windows.Devices.Geolocation.PositionChangedEven
 namespace Avae.Essentials
 {
     [SupportedOSPlatform("windows10.0.14393")]
-    public class GeolocationImplementation : IGeolocation
+    public class AvaeGeolocation : IGeolocation
     {
         public event EventHandler<GeolocationLocationChangedEventArgs>? LocationChanged;
 
@@ -116,7 +116,7 @@ namespace Avae.Essentials
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            await AvaePermissions.EnsureGrantedAsync<Permissions.LocationWhenInUse>();
+            await AvaePermissions.EnsureGrantedAsync<AvaePermissions.LocationWhenInUse>();
 
             var geolocator = new Geolocator
             {
@@ -142,7 +142,7 @@ namespace Avae.Essentials
             if (IsListeningForeground)
                 throw new InvalidOperationException("Already listening to location updates.");
 
-            await AvaePermissions.EnsureGrantedAsync<Permissions.LocationWhenInUse>();
+            await AvaePermissions.EnsureGrantedAsync<AvaePermissions.LocationWhenInUse>();
 
             listeningGeolocator = new Geolocator
             {

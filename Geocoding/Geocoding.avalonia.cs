@@ -12,6 +12,7 @@ class AvaeGeocoding : IGeocoding
     public async Task<IEnumerable<Placemark>> GetPlacemarksAsync(double latitude, double longitude)
     {
         using var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
         // Nominatim reverse geocoding URL
         string url = $"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude}&lon={longitude}&addressdetails=1";
 
@@ -44,6 +45,8 @@ class AvaeGeocoding : IGeocoding
     public async Task<IEnumerable<Location>> GetLocationsAsync(string address)
     {
         using var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
+
         // Nominatim request URL
         string url = $"https://nominatim.openstreetmap.org/search?format=json&q={Uri.EscapeDataString(address)}";
 

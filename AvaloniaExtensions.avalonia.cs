@@ -52,7 +52,7 @@ public static class AvaloniaExtensions
 #else
             new AvaeGeocoding(),
 #endif
-            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 14393, 0) ? new GeolocationImplementation() : null!,
+            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 14393, 0) ? new AvaeGeolocation() : null!,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new GyroscopeImplementation() : null!,
             hapticFeedback,
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240, 0) ? new LauncherImplementation() : null!,

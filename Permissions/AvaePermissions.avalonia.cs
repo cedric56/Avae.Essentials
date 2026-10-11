@@ -12,6 +12,7 @@ using Windows.ApplicationModel.Contacts;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Geolocation;
 using static Microsoft.Maui.ApplicationModel.Permissions;
+using Dispatcher = Avalonia.Threading.Dispatcher;
 
 namespace Avae.Essentials
 {
@@ -73,7 +74,7 @@ namespace Avae.Essentials
 		}
 
         internal static async Task EnsureGrantedAsync<TPermission>()
-            where TPermission : BasePermission, new()
+            where TPermission : AvaeBasePlatformPermission, new()
         {
             var status = await RequestAsync<TPermission>();
 
@@ -82,7 +83,7 @@ namespace Avae.Essentials
         }
 
         internal static async Task EnsureGrantedOrRestrictedAsync<TPermission>()
-            where TPermission : BasePermission, new()
+            where TPermission : AvaeBasePlatformPermission, new()
         {
             var status = await RequestAsync<TPermission>();
 
@@ -94,7 +95,7 @@ namespace Avae.Essentials
         /// <summary>
         /// Represents the platform-specific abstract base class for all permissions on this platform.
         /// </summary>
-        public abstract partial class BasePlatformPermission : BasePermission
+        public abstract partial class AvaeBasePlatformPermission : BasePermission
 		{
 			/// <summary>
 			/// Gets the required entries that need to be present in the application's <c>AppxManifest.xml</c> file for this permission.
@@ -126,28 +127,28 @@ namespace Avae.Essentials
 			public override bool ShouldShowRationale() => false;
 		}
 
-		public partial class Battery : BasePlatformPermission
-		{
+		public partial class Battery : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Bluetooth : BasePlatformPermission
-		{
+		public partial class Bluetooth : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class CalendarRead : BasePlatformPermission
-		{
+		public partial class CalendarRead : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class CalendarWrite : BasePlatformPermission
-		{
+		public partial class CalendarWrite : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Camera : BasePlatformPermission
-		{
+		public partial class Camera : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class ContactsRead : BasePlatformPermission
-		{
+		public partial class ContactsRead : AvaeBasePlatformPermission
+        {
 			/// <inheritdoc/>
 			public override async Task<PermissionStatus> CheckStatusAsync()
 			{
@@ -161,8 +162,8 @@ namespace Avae.Essentials
 			}
 		}
 
-		public partial class ContactsWrite : BasePlatformPermission
-		{
+		public partial class ContactsWrite : AvaeBasePlatformPermission
+        {
 			/// <inheritdoc/>
 			public override async Task<PermissionStatus> CheckStatusAsync()
 			{
@@ -176,16 +177,16 @@ namespace Avae.Essentials
 			}
 		}
 
-		public partial class Flashlight : BasePlatformPermission
-		{
+		public partial class Flashlight : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class LaunchApp : BasePlatformPermission
-		{
+		public partial class LaunchApp : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class LocationWhenInUse : BasePlatformPermission
-		{
+		public partial class LocationWhenInUse : AvaeBasePlatformPermission
+        {
 			/// <inheritdoc/>
 			public override Task<PermissionStatus> CheckStatusAsync()
 			{
@@ -195,7 +196,7 @@ namespace Avae.Essentials
 
 			internal static async Task<PermissionStatus> RequestLocationPermissionAsync()
 			{
-				if (!MainThread.IsMainThread)
+				if (!Dispatcher.UIThread.CheckAccess())
 					throw new PermissionException("Permission request must be invoked on main thread.");
 
 				var accessStatus = await Geolocator.RequestAccessAsync();
@@ -208,8 +209,8 @@ namespace Avae.Essentials
 			}
 		}
 
-		public partial class LocationAlways : BasePlatformPermission
-		{
+		public partial class LocationAlways : AvaeBasePlatformPermission
+        {
 			/// <inheritdoc/>
 			public override Task<PermissionStatus> CheckStatusAsync()
 			{
@@ -218,44 +219,44 @@ namespace Avae.Essentials
 			}
 		}
 
-		public partial class Maps : BasePlatformPermission
-		{
+		public partial class Maps : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Media : BasePlatformPermission
-		{
+		public partial class Media : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Microphone : BasePlatformPermission
-		{
+		public partial class Microphone : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class NearbyWifiDevices : BasePlatformPermission
-		{
+		public partial class NearbyWifiDevices : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class NetworkState : BasePlatformPermission
-		{
+		public partial class NetworkState : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Phone : BasePlatformPermission
-		{
+		public partial class Phone : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Photos : BasePlatformPermission
-		{
+		public partial class Photos : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class PostNotifications : BasePlatformPermission
-		{
+		public partial class PostNotifications : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Reminders : BasePlatformPermission
-		{
+		public partial class Reminders : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Sensors : BasePlatformPermission
-		{
+		public partial class Sensors : AvaeBasePlatformPermission
+        {
 			static readonly Guid activitySensorClassId = new Guid("9D9E0118-1807-4F2E-96E4-2CE57142E196");
 
 			/// <inheritdoc/>
@@ -276,24 +277,24 @@ namespace Avae.Essentials
 			}
 		}
 
-		public partial class Sms : BasePlatformPermission
-		{
+		public partial class Sms : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Speech : BasePlatformPermission
-		{
+		public partial class Speech : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class StorageRead : BasePlatformPermission
-		{
+		public partial class StorageRead : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class StorageWrite : BasePlatformPermission
-		{
+		public partial class StorageWrite : AvaeBasePlatformPermission
+        {
 		}
 
-		public partial class Vibrate : BasePlatformPermission
-		{
+		public partial class Vibrate : AvaeBasePlatformPermission
+        {
 		}
 	}
 }
