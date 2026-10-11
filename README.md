@@ -9,8 +9,6 @@ Contracts stay aligned with `Microsoft.Maui.Essentials` (`IGeolocation`, `IClipb
 
 **License:** MIT — [LICENSE.txt](LICENSE.txt)
 
-**Related:** [Avae.Abstractions](https://github.com/cedric56/Avae.Abstractions) · [Avae.Services](https://github.com/cedric56/Avae.Services)
-
 ---
 
 ## Package layout
