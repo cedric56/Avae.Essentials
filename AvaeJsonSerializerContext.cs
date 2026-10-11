@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
-using System.Net;
 using System.Text.Json.Serialization;
 
 namespace Avae.Essentials;
@@ -13,8 +12,6 @@ namespace Avae.Essentials;
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(TextToSpeechResponseInterop))]
 [JsonSerializable(typeof(IEnumerable<TextToSpeechResponseInterop>))]
-//[JsonSerializable(typeof(GeolocationResultInterop))]
-//[JsonSerializable(typeof(GeolocationReadingResultInterop))]
 public partial class AvaeJsonSerializerContext : JsonSerializerContext
 {
 }

@@ -1,6 +1,5 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <_KernelRelease Condition="Exists('/proc/sys/kernel/osrelease')">$([System.IO.File]::ReadAllText('/proc/sys/kernel/osrelease').ToLowerInvariant())</_KernelRelease>
     <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux'))">true</IsLinuxOS>
     <IsWindowsOS Condition="$([MSBuild]::IsOSPlatform('windows'))">true</IsWindowsOS>
     <IsAndroidTFM>$([System.String]::Copy('$(TargetFramework)').Contains('-android'))</IsAndroidTFM>
@@ -11,6 +10,7 @@
   </PropertyGroup>
   
   <ItemGroup Condition="'$(UsingMicrosoftNETSdkWeb)' == 'true' OR '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true'">
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
     <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Blazor\**\*.cs" Visible="false" />
   </ItemGroup>
 

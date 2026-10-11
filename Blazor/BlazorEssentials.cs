@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
@@ -54,11 +55,35 @@ public static class BlazorEssentials
             new BlazorSms(),
             new BlazorTextToSpeech(),
             new BlazorVibration(),
-            WebAuthenticator.Default,
+            new BlazorWebAuthenticator(),
             () => new BlazorVersionTracking(preferences, appInfo),
             ServiceLifetime.Singleton);
 
         services.RegisterEssentials();
+    }
+
+    public static (string pattern, string html) UseWebAuthenticator()
+    {
+        const string html = """
+        <!doctype html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body>
+          <p>Authentication completed. You may close this window.</p>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage(
+                { type: "web-authenticator-complete" },
+                window.location.origin
+              );
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+        """;
+
+        return ("/auth/popup-complete", html);
     }
 
     public static bool IsInitialized =>

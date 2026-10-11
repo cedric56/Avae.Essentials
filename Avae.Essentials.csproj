@@ -81,7 +81,7 @@
     <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup>    
     <PackageReference Include="Microsoft.Maui.Essentials" />
   </ItemGroup>
 </Project>

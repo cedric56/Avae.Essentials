@@ -121,48 +121,203 @@ export function capturePhotoInPopup() {
 	let stream = null;
 
 	const { $, close, promise } = openPopup(`
-        <canvas id="photoCanvas" style="display:none;"></canvas>
-        <div id="actionButtons" style="display:none; justify-content:center;">
-            <button id="acceptPhoto">✅ Accept</button>
-            <button id="rejectPhoto">❌ Reject</button>
-        </div>
-        <video id="videoPreview" autoplay playsinline style="width:100%; height:auto; border:1px solid #ccc;"></video>
-        <button id="takePhoto">📸 Take Photo</button>
-    `, { onClose: () => stopStream(stream) });
+		<style>
+			.cp-root {
+				--cp-bg: #0f1115;
+				--cp-surface: #1a1d24;
+				--cp-border: rgba(255,255,255,.08);
+				--cp-text: #f3f4f6;
+				--cp-muted: #9ca3af;
+				--cp-accent: #6366f1;
+				--cp-success: #22c55e;
+				font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+				color: var(--cp-text);
+				background: var(--cp-bg);
+				border-radius: 16px;
+				overflow: hidden;
+				min-width: min(100%, 420px);
+				max-width: 520px;
+			}
+			.cp-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 14px 16px;
+				border-bottom: 1px solid var(--cp-border);
+				background: var(--cp-surface);
+			}
+			.cp-title {
+				margin: 0;
+				font-size: 15px;
+				font-weight: 600;
+				letter-spacing: .01em;
+			}
+			.cp-badge {
+				font-size: 11px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: .06em;
+				padding: 4px 8px;
+				border-radius: 999px;
+				background: rgba(99,102,241,.15);
+				color: #a5b4fc;
+			}
+			.cp-badge.review {
+				background: rgba(34,197,94,.15);
+				color: #86efac;
+			}
+			.cp-stage {
+				position: relative;
+				background: #000;
+				aspect-ratio: 4 / 3;
+			}
+			.cp-stage video,
+			.cp-stage canvas {
+				display: block;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				background: #000;
+			}
+			.cp-footer {
+				padding: 14px 16px 16px;
+				border-top: 1px solid var(--cp-border);
+				background: var(--cp-surface);
+			}
+			.cp-hint {
+				margin: 0 0 12px;
+				font-size: 12px;
+				color: var(--cp-muted);
+				text-align: center;
+			}
+			.cp-actions {
+				display: flex;
+				justify-content: center;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+			.cp-btn {
+				appearance: none;
+				border: 1px solid var(--cp-border);
+				background: #252a33;
+				color: var(--cp-text);
+				font: inherit;
+				font-size: 13px;
+				font-weight: 600;
+				padding: 10px 16px;
+				border-radius: 10px;
+				cursor: pointer;
+				transition: transform .12s ease, background .12s ease, opacity .12s ease;
+			}
+			.cp-btn:hover:not(:disabled) { transform: translateY(-1px); background: #2d3340; }
+			.cp-btn:active:not(:disabled) { transform: translateY(0); }
+			.cp-btn:disabled { opacity: .4; cursor: not-allowed; }
+			.cp-btn-primary {
+				background: var(--cp-accent);
+				border-color: transparent;
+				color: #fff;
+			}
+			.cp-btn-primary:hover:not(:disabled) { background: #4f46e5; }
+			.cp-btn-success {
+				background: var(--cp-success);
+				border-color: transparent;
+				color: #052e16;
+			}
+			.cp-btn-success:hover:not(:disabled) { background: #16a34a; color: #fff; }
+			.cp-btn-ghost {
+				background: transparent;
+			}
+			.cp-shutter {
+				width: 56px;
+				height: 56px;
+				border-radius: 50%;
+				border: 3px solid rgba(255,255,255,.85);
+				background: transparent;
+				padding: 0;
+				display: grid;
+				place-items: center;
+				cursor: pointer;
+			}
+			.cp-shutter::after {
+				content: "";
+				width: 42px;
+				height: 42px;
+				border-radius: 50%;
+				background: #fff;
+				transition: transform .12s ease;
+			}
+			.cp-shutter:hover::after { transform: scale(.92); }
+			.cp-shutter:active::after { transform: scale(.84); }
+		</style>
+		<div class="cp-root">
+			<div class="cp-header">
+				<h3 class="cp-title">Take photo</h3>
+				<span id="statusBadge" class="cp-badge">Live</span>
+			</div>
+			<div class="cp-stage">
+				<video id="videoPreview" autoplay playsinline muted></video>
+				<canvas id="photoCanvas" style="display:none;"></canvas>
+			</div>
+			<div class="cp-footer">
+				<p id="hintText" class="cp-hint">Frame your shot, then capture.</p>
+				<div id="captureControls" class="cp-actions">
+					<button type="button" id="takePhoto" class="cp-shutter" aria-label="Take photo"></button>
+				</div>
+				<div id="actionButtons" class="cp-actions" style="display:none;">
+					<button type="button" id="acceptPhoto" class="cp-btn cp-btn-success">Use photo</button>
+					<button type="button" id="rejectPhoto" class="cp-btn cp-btn-ghost">Retake</button>
+				</div>
+			</div>
+		</div>
+	`, { onClose: () => stopStream(stream) });
 
 	const video = $("#videoPreview");
 	const canvas = $("#photoCanvas");
 	const actions = $("#actionButtons");
+	const captureControls = $("#captureControls");
 	const takeButton = $("#takePhoto");
+	const badge = $("#statusBadge");
+	const hint = $("#hintText");
+
+	const setStatus = (text, review = false) => {
+		badge.textContent = text;
+		badge.classList.toggle("review", review);
+	};
 
 	function showPreview() {
 		hide(canvas);
 		hide(actions);
 		show(video);
-		show(takeButton);
+		show(captureControls, "flex");
+		setStatus("Live");
+		hint.textContent = "Frame your shot, then capture.";
 	}
 
 	function showCaptured() {
 		hide(video);
-		hide(takeButton);
+		hide(captureControls);
 		show(canvas);
 		show(actions, "flex");
+		setStatus("Review", true);
+		hint.textContent = "Looking good? Accept or retake.";
 	}
 
 	function takePhoto() {
 		if (!stream) return;
+		if (!video.videoWidth || !video.videoHeight) return;
 
 		canvas.width = video.videoWidth;
 		canvas.height = video.videoHeight;
-		canvas.style.width = "100%";
-		canvas.style.height = "auto";
 		canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
 
 		showCaptured();
 	}
 
 	function acceptPhoto() {
-		canvas.toBlob(blob => close(blob ? URL.createObjectURL(blob) : null), "image/png");
+		canvas.toBlob(
+			blob => close(blob ? URL.createObjectURL(blob) : null),
+			"image/png"
+		);
 	}
 
 	takeButton.addEventListener("click", takePhoto);
@@ -173,6 +328,7 @@ export function capturePhotoInPopup() {
 		if (!s) return close(null);
 		stream = s;
 		video.srcObject = stream;
+		setStatus("Live");
 	});
 
 	return promise;
@@ -187,17 +343,169 @@ export function captureVideoInPopup() {
 	let mimeType = "";
 
 	const { $, close, promise } = openPopup(`
-        <video id="videoPreview" autoplay playsinline muted style="width:100%;"></video>
-        <video id="playbackPreview" style="display:none;width:100%;"></video>
-        <div id="recordingControls" style="margin-top:10px;">
-            <button id="startRecording">🎥 Start Recording</button>
-            <button id="stopRecording" disabled>⏹ Stop</button>
-        </div>
-        <div id="actionButtons" style="display:none; justify-content:center; margin-top:10px;">
-            <button id="acceptRecording">✅ Accept</button>
-            <button id="rejectRecording">❌ Reject</button>
-        </div>
-    `, { onClose: () => stopStream(stream) });
+		<style>
+			.cv-root {
+				--cv-bg: #0f1115;
+				--cv-surface: #1a1d24;
+				--cv-border: rgba(255,255,255,.08);
+				--cv-text: #f3f4f6;
+				--cv-muted: #9ca3af;
+				--cv-accent: #6366f1;
+				--cv-danger: #ef4444;
+				--cv-success: #22c55e;
+				font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+				color: var(--cv-text);
+				background: var(--cv-bg);
+				border-radius: 16px;
+				overflow: hidden;
+				min-width: min(100%, 420px);
+				max-width: 520px;
+			}
+			.cv-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 14px 16px;
+				border-bottom: 1px solid var(--cv-border);
+				background: var(--cv-surface);
+			}
+			.cv-title {
+				margin: 0;
+				font-size: 15px;
+				font-weight: 600;
+				letter-spacing: .01em;
+			}
+			.cv-badge {
+				font-size: 11px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: .06em;
+				padding: 4px 8px;
+				border-radius: 999px;
+				background: rgba(99,102,241,.15);
+				color: #a5b4fc;
+			}
+			.cv-badge.live {
+				background: rgba(239,68,68,.15);
+				color: #fca5a5;
+				animation: cv-pulse 1.2s ease-in-out infinite;
+			}
+			@keyframes cv-pulse {
+				0%, 100% { opacity: 1; }
+				50% { opacity: .55; }
+			}
+			.cv-stage {
+				position: relative;
+				background: #000;
+				aspect-ratio: 16 / 10;
+			}
+			.cv-stage video {
+				display: block;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				background: #000;
+			}
+			.cv-rec-dot {
+				position: absolute;
+				top: 12px;
+				left: 12px;
+				display: none;
+				align-items: center;
+				gap: 6px;
+				padding: 6px 10px;
+				border-radius: 999px;
+				background: rgba(0,0,0,.55);
+				backdrop-filter: blur(6px);
+				font-size: 12px;
+				font-weight: 600;
+			}
+			.cv-rec-dot::before {
+				content: "";
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: var(--cv-danger);
+				box-shadow: 0 0 0 3px rgba(239,68,68,.25);
+			}
+			.cv-footer {
+				padding: 14px 16px 16px;
+				border-top: 1px solid var(--cv-border);
+				background: var(--cv-surface);
+			}
+			.cv-hint {
+				margin: 0 0 12px;
+				font-size: 12px;
+				color: var(--cv-muted);
+				text-align: center;
+			}
+			.cv-actions {
+				display: flex;
+				justify-content: center;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+			.cv-btn {
+				appearance: none;
+				border: 1px solid var(--cv-border);
+				background: #252a33;
+				color: var(--cv-text);
+				font: inherit;
+				font-size: 13px;
+				font-weight: 600;
+				padding: 10px 16px;
+				border-radius: 10px;
+				cursor: pointer;
+				transition: transform .12s ease, background .12s ease, opacity .12s ease;
+			}
+			.cv-btn:hover:not(:disabled) { transform: translateY(-1px); background: #2d3340; }
+			.cv-btn:active:not(:disabled) { transform: translateY(0); }
+			.cv-btn:disabled { opacity: .4; cursor: not-allowed; }
+			.cv-btn-primary {
+				background: var(--cv-accent);
+				border-color: transparent;
+				color: #fff;
+			}
+			.cv-btn-primary:hover:not(:disabled) { background: #4f46e5; }
+			.cv-btn-danger {
+				background: var(--cv-danger);
+				border-color: transparent;
+				color: #fff;
+			}
+			.cv-btn-danger:hover:not(:disabled) { background: #dc2626; }
+			.cv-btn-success {
+				background: var(--cv-success);
+				border-color: transparent;
+				color: #052e16;
+			}
+			.cv-btn-success:hover:not(:disabled) { background: #16a34a; color: #fff; }
+			.cv-btn-ghost {
+				background: transparent;
+			}
+		</style>
+		<div class="cv-root">
+			<div class="cv-header">
+				<h3 class="cv-title">Record video</h3>
+				<span id="statusBadge" class="cv-badge">Ready</span>
+			</div>
+			<div class="cv-stage">
+				<video id="videoPreview" autoplay playsinline muted></video>
+				<video id="playbackPreview" style="display:none;"></video>
+				<div id="recIndicator" class="cv-rec-dot">REC</div>
+			</div>
+			<div class="cv-footer">
+				<p id="hintText" class="cv-hint">Position yourself, then start recording.</p>
+				<div id="recordingControls" class="cv-actions">
+					<button type="button" id="startRecording" class="cv-btn cv-btn-primary">Start recording</button>
+					<button type="button" id="stopRecording" class="cv-btn cv-btn-danger" disabled>Stop</button>
+				</div>
+				<div id="actionButtons" class="cv-actions" style="display:none;">
+					<button type="button" id="acceptRecording" class="cv-btn cv-btn-success">Use this clip</button>
+					<button type="button" id="rejectRecording" class="cv-btn cv-btn-ghost">Retake</button>
+				</div>
+			</div>
+		</div>
+	`, { onClose: () => stopStream(stream) });
 
 	const preview = $("#videoPreview");
 	const playback = $("#playbackPreview");
@@ -205,6 +513,15 @@ export function captureVideoInPopup() {
 	const actions = $("#actionButtons");
 	const startButton = $("#startRecording");
 	const stopButton = $("#stopRecording");
+	const badge = $("#statusBadge");
+	const recDot = $("#recIndicator");
+	const hint = $("#hintText");
+
+	const setStatus = (text, live = false) => {
+		badge.textContent = text;
+		badge.classList.toggle("live", live);
+		recDot.style.display = live ? "flex" : "none";
+	};
 
 	const buildBlob = () => new Blob(chunks, { type: mimeType || "video/webm" });
 
@@ -212,6 +529,8 @@ export function captureVideoInPopup() {
 		stream = await openCamera({ audio: true });
 		if (!stream) return close(null);
 		preview.srcObject = stream;
+		setStatus("Ready");
+		hint.textContent = "Position yourself, then start recording.";
 	}
 
 	function startCapture() {
@@ -227,6 +546,9 @@ export function captureVideoInPopup() {
 		recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 		recorder.onstop = showPlayback;
 		recorder.start();
+
+		setStatus("Recording", true);
+		hint.textContent = "Recording… tap Stop when you’re done.";
 	}
 
 	function stopCapture() {
@@ -234,6 +556,8 @@ export function captureVideoInPopup() {
 		stopStream(stream);
 		stopButton.disabled = true;
 		hide(controls);
+		setStatus("Review");
+		hint.textContent = "Preview your clip, then accept or retake.";
 	}
 
 	function showPlayback() {
@@ -263,7 +587,9 @@ export function captureVideoInPopup() {
 		show(controls, "flex");
 		startButton.disabled = false;
 
-		startCamera(); // stream was stopped when recording ended
+		setStatus("Ready");
+		hint.textContent = "Camera restarted — record again when ready.";
+		startCamera();
 	}
 
 	startButton.addEventListener("click", startCapture);
@@ -1066,4 +1392,64 @@ export function pickFiles(accept, multiple) {
 		document.body.appendChild(input);
 		input.click();
 	});
+}
+
+// ---------- WebAuthenticator ----------
+
+export function authenticate(url) {
+		return new Promise((resolve, reject) => {
+			const popup = window.open(
+				"about:blank",
+				"webAuthenticator",
+				"width=520,height=700"
+			);
+
+			if (!popup) {
+				reject(new Error("The authentication popup was blocked."));
+				return;
+			}
+
+			let finished = false;
+
+			const cleanup = () => {
+				window.removeEventListener("message", onMessage);
+				clearInterval(poll);
+				clearTimeout(timeout);
+			};
+
+			const finish = (error) => {
+				if (finished) return;
+				finished = true;
+				cleanup();
+
+				if (error) reject(error);
+				else resolve(true);
+			};
+
+			const onMessage = (event) => {
+				if (event.origin !== window.location.origin)
+					return;
+
+				if (event.source !== popup)
+					return;
+
+				if (event.data?.type === "web-authenticator-complete")
+					finish();
+			};
+
+			window.addEventListener("message", onMessage);
+
+			const poll = setInterval(() => {
+				if (popup.closed)
+					finish(new Error("Authentication window closed."));
+			}, 500);
+
+			const timeout = setTimeout(() => {
+				try { popup.close(); } catch { }
+				finish(new Error("Authentication timed out."));
+			}, 120000);
+
+			// Open the authentication URL only after installing listeners.
+			popup.location.href = url;
+		});
 }

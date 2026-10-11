@@ -187,79 +187,8 @@ public static class Extensions
         services.TryAdd(ServiceDescriptor.Describe(typeof(ISms), _ => Sms.Default, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(ITextToSpeech), _ => TextToSpeech.Default, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(IVibration), _ => Vibration.Default, lifetime));
-        services.TryAdd(ServiceDescriptor.Describe(typeof(IVersionTracking), _ =>
-        {
-            try
-            {
-                return VersionTracking.Default;
-            }
-            catch
-            {
-                return new VersionTrackingDefault();
-            }
-
-        }, lifetime));
+        services.TryAdd(ServiceDescriptor.Describe(typeof(IVersionTracking), _ =>VersionTracking.Default, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(IWebAuthenticator), _ => WebAuthenticator.Default, lifetime));
-    }
-
-
-    /// <summary>
-    /// Fallback <see cref="IVersionTracking"/> implementation used when the platform's default
-    /// version tracking cannot be constructed (e.g. outside a fully initialized MAUI context).
-    /// Every member throws <see cref="NotImplementedException"/>.
-    /// </summary>
-    public class VersionTrackingDefault : IVersionTracking
-    {
-        /// <inheritdoc/>
-        public bool IsFirstLaunchEver => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public bool IsFirstLaunchForCurrentVersion => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public bool IsFirstLaunchForCurrentBuild => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public string CurrentVersion => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public string CurrentBuild => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public string? PreviousVersion => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public string? PreviousBuild => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public string? FirstInstalledVersion => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public string? FirstInstalledBuild => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public IReadOnlyList<string> VersionHistory => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public IReadOnlyList<string> BuildHistory => throw new NotImplementedException();
-
-        /// <inheritdoc/>
-        public bool IsFirstLaunchForBuild(string build)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc/>
-        public bool IsFirstLaunchForVersion(string version)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc/>
-        public void Track()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     /// <summary>
