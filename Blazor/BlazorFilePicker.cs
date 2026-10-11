@@ -1,4 +1,5 @@
 ﻿using Microsoft.JSInterop;
+using Microsoft.Maui.Media;
 using Microsoft.Maui.Storage;
 using System;
 using System.Collections.Generic;
@@ -17,21 +18,52 @@ namespace Avae.Essentials;
 public sealed class BlazorFilePicker : IFilePicker
 {
     public async Task<FileResult?> PickAsync(PickOptions? options = null)
-        => (await PickCoreAsync(
-            multiple: false)).FirstOrDefault();
+        => (await PickCoreAsync(options, multiple: false)).FirstOrDefault();
 
     private sealed record PickedFile(string Name, string Type, byte[] data);
 
     public async Task<IEnumerable<FileResult>?> PickMultipleAsync(PickOptions? options = null)
-        => await PickCoreAsync(            
-            multiple: true);
+        => await PickCoreAsync(options, multiple: true);
 
-    public static async Task<IEnumerable<FileResult>> PickCoreAsync(bool multiple)
+    private static string? GetAccept(PickOptions? options)
+    {
+        return null;
+
+        //if (options?.FileTypes?.Value is not { } fileTypes)
+        //    return null;
+
+        //// Prefer browser-specific filters if your platform defines them.
+        //// Otherwise, collect filters that are meaningful to HTML inputs.
+        //var filters = fileTypes
+        //    .Where(type => !string.IsNullOrWhiteSpace(type))
+        //    .Where(type =>
+        //        type.StartsWith('.') ||
+        //        type.Contains('/') ||
+        //        type.StartsWith('*'))
+        //    .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        //var accept = string.Join(",", filters);
+        //return string.IsNullOrWhiteSpace(accept) ? null : accept;
+    }
+
+    public static Task<IEnumerable<FileResult>> PickCoreAsync(MediaPickerOptions? options, bool multiple)
+    {
+        PickOptions? pickOptions = null;
+        if (options != null)
+            pickOptions = new PickOptions()
+            {
+                PickerTitle = options.Title
+                //FileTypes = options.
+            };
+        return PickCoreAsync(pickOptions, multiple);
+    }
+
+    public static async Task<IEnumerable<FileResult>> PickCoreAsync(PickOptions? options, bool multiple)
     {
         try
         {
             var files = await BlazorEssentials.Module.InvokeAsync<PickedFile[]>(
-                "pickFiles", (string?)null, multiple);
+                "pickFiles", options?.PickerTitle, GetAccept(options), multiple);
 
             var pickDirectory = Path.Combine(
                 Path.GetTempPath(), "maui-filepicker", Guid.NewGuid().ToString("N"));

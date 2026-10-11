@@ -1386,12 +1386,15 @@ export function appInfoUnsubscribeTheme() {
 	appInfoHandler = null;
 }
 
-export function pickFiles(accept, multiple) {
+export function pickFiles(title, accept, multiple) {
 	return new Promise(resolve => {
 		const input = document.createElement("input");
 		input.type = "file";
 		input.multiple = !!multiple;
 		if (accept) input.accept = accept;
+		if (title) {
+			input.setAttribute("aria-label", title);
+		}
 		input.style.display = "none";
 
 		input.addEventListener("change", async () => {

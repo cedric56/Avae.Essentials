@@ -19,19 +19,18 @@ internal class BlazorMediaPicker : IAvaeMediaPicker
     => isPhoto ? CapturePhotoAsync(options) : CaptureVideoAsync(options);
 
     public async Task<FileResult?> PickPhotoAsync(MediaPickerOptions? options = null)
-        => (await BlazorFilePicker.PickCoreAsync(
-            multiple: false)).FirstOrDefault();
+        => (await BlazorFilePicker.PickCoreAsync(options, multiple: false)).FirstOrDefault();
 
     public async Task<List<FileResult>> PickPhotosAsync(MediaPickerOptions? options = null)
-    => (await BlazorFilePicker.PickCoreAsync(
+    => (await BlazorFilePicker.PickCoreAsync(options,
         multiple: true) ?? []).ToList();
 
     public async Task<FileResult?> PickVideoAsync(MediaPickerOptions? options = null)
-    => (await BlazorFilePicker.PickCoreAsync(
+    => (await BlazorFilePicker.PickCoreAsync(options,
         multiple: false)).FirstOrDefault();
 
     public async Task<List<FileResult>> PickVideosAsync(MediaPickerOptions? options = null)
-    => (await BlazorFilePicker.PickCoreAsync(
+    => (await BlazorFilePicker.PickCoreAsync(options,
         multiple: true) ?? []).ToList();
 
     public async Task<FileResult?> CapturePhotoAsync(MediaPickerOptions? options = null)
