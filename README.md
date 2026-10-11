@@ -50,7 +50,7 @@ services.UseAvaloniaEssentials();
 services.UseBlazorEssentials();
 ```
 
-`BlazorEssentials.js` is automatically copied in `wwwroot`, and call `InitializeAsync()` on preferences before first read/write.
+`BlazorEssentials.js` is automatically copied in `wwwroot`, and call `InitializeAsync()`.
 
 ```csharp
 var app = builder.Build();
