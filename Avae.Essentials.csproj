@@ -83,5 +83,6 @@
 
   <ItemGroup>    
     <PackageReference Include="Microsoft.Maui.Essentials" />
+    <!--<PackageReference Include="Microsoft.JSInterop" />-->
   </ItemGroup>
 </Project>

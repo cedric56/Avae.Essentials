@@ -79,7 +79,7 @@ public class BlazorShare : IAvaeShare
         {
             // Check if the file is an Avalonia-specific file result
             if (file is BlazorFileResult b)
-                shareFiles.Add(new AvaeShareFile(b));
+                shareFiles.Add(new BlazorShareFile(b));
             else
                 // Use standard MAUI ShareFile for regular files
                 shareFiles.Add(new ShareFile(file));
@@ -107,7 +107,7 @@ public class BlazorShare : IAvaeShare
             names[i] = files[i].FileName;
             types[i] = files[i].ContentType ?? string.Empty;
             contents[i] = Convert.ToBase64String(
-                files[i] is AvaeShareFile f ? 
+                files[i] is BlazorShareFile f ? 
                 f.Data ?? await File.ReadAllBytesAsync(files[i].FullPath).ConfigureAwait(false) :                
                 await File.ReadAllBytesAsync(files[i].FullPath).ConfigureAwait(false));
         }
@@ -116,9 +116,9 @@ public class BlazorShare : IAvaeShare
         {
             await BlazorEssentials.Module.InvokeVoidAsync("shareFiles",
                     title,
-                    JsonSerializer.Serialize(names, AvaeJsonSerializerContext.Default.ListString),
-                    JsonSerializer.Serialize(types, AvaeJsonSerializerContext.Default.ListString),
-                    JsonSerializer.Serialize(contents, AvaeJsonSerializerContext.Default.ListString)).ConfigureAwait(false);
+                    JsonSerializer.Serialize(names, AvaeJsonSerializerContext.Default.StringArray),
+                    JsonSerializer.Serialize(types, AvaeJsonSerializerContext.Default.StringArray),
+                    JsonSerializer.Serialize(contents, AvaeJsonSerializerContext.Default.StringArray)).ConfigureAwait(false);
 
         }
         catch (Exception ex) when (ex.Message.Contains("unsupported", StringComparison.OrdinalIgnoreCase))

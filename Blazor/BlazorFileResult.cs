@@ -14,11 +14,11 @@ public class BlazorFileResult : FileResult
     }
 }
 
-public class AvaeShareFile : ShareFile
+public class BlazorShareFile : ShareFile
 {
     public byte[]? Data { get; private set; }
 
-    public AvaeShareFile(BlazorFileResult result)
+    public BlazorShareFile(BlazorFileResult result)
         : base(result.FullPath, result.ContentType)
     {
         FileName = result.FileName;

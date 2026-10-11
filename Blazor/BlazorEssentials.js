@@ -1149,10 +1149,10 @@ export async function sensorStart(dotNetRef, kind, frequencyHz) {
 		return false;
 
 	// iOS Safari requires an explicit permission request.
-	const eventCtor =
-		kind === "accelerometer" || kind === "gyroscope"
-			? globalThis.DeviceMotionEvent
-			: globalThis.DeviceOrientationEvent;
+	const eventCtor = globalThis.DeviceOrientationEvent;
+		// kind === "accelerometer" || kind === "gyroscope"
+		// 	? globalThis.DeviceMotionEvent
+		// 	: globalThis.DeviceOrientationEvent;
 
 	if (typeof eventCtor.requestPermission === "function") {
 		const state = await eventCtor.requestPermission();
@@ -1166,8 +1166,9 @@ export async function sensorStart(dotNetRef, kind, frequencyHz) {
 
 	const notify = payload =>
 		dotNetRef
-			.invokeMethodAsync("OnSensorChanged", kind, payload)
-			.catch(() => { });
+			.invokeMethodAsync("OnReading", JSON.stringify(payload))
+			.catch(err => dotNetRef
+				.invokeMethodAsync("OnError", JSON.stringify(err)));
 
 	switch (kind) {
 		case "accelerometer":
@@ -1452,4 +1453,73 @@ export function authenticate(url) {
 			// Open the authentication URL only after installing listeners.
 			popup.location.href = url;
 		});
+}
+
+// ---------- Torch ----------
+let stream = null;
+
+export async function isTorchSupported() {
+	return navigator.mediaDevices?.getUserMedia &&
+		navigator.mediaDevices.getSupportedConstraints().torch;
+}
+
+export async function on() {
+	if (!navigator.mediaDevices?.getUserMedia) {
+		throw new Error("Camera access is not supported.");
+	}
+
+	if (!navigator.mediaDevices.getSupportedConstraints().torch) {
+		throw new Error("Flashlight control is not supported.");
+	}
+
+	// Avoid opening the camera more than once.
+	if (stream) {
+		const track = stream.getVideoTracks()[0];
+
+		if (track?.readyState === "live") {
+			await track.applyConstraints({
+				advanced: [{ torch: true }]
+			});
+			return;
+		}
+
+		stream = null;
+	}
+
+	stream = await navigator.mediaDevices.getUserMedia({
+		video: {
+			facingMode: { ideal: "environment" }
+		}
+	});
+
+	const track = stream.getVideoTracks()[0];
+
+	try {
+		await track.applyConstraints({
+			advanced: [{ torch: true }]
+		});
+	} catch (error) {
+		stream.getTracks().forEach(t => t.stop());
+		stream = null;
+		throw error;
+	}
+}
+
+export async function off() {
+	if (!stream) return;
+
+	const currentStream = stream;
+	stream = null;
+
+	try {
+		const track = currentStream.getVideoTracks()[0];
+
+		if (track?.readyState === "live") {
+			await track.applyConstraints({
+				advanced: [{ torch: false }]
+			});
+		}
+	} finally {
+		currentStream.getTracks().forEach(t => t.stop());
+	}
 }

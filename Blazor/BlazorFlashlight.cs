@@ -1,4 +1,4 @@
-﻿using Microsoft.Maui.ApplicationModel;
+﻿using Microsoft.JSInterop;
 using Microsoft.Maui.Devices;
 using System.Threading.Tasks;
 
@@ -7,11 +7,12 @@ namespace Avae.Essentials;
 /// <summary>The camera torch is not reachable from the browser.</summary>
 public class BlazorFlashlight : IFlashlight
 {
-    public Task<bool> IsSupportedAsync() => Task.FromResult(false);
+    public async Task<bool> IsSupportedAsync() =>
+        await BlazorEssentials.Module.InvokeAsync<bool>("isTorchSupported");
+    
+    public async Task TurnOnAsync() =>
+        await BlazorEssentials.Module.InvokeVoidAsync("on");
 
-    public Task TurnOnAsync() =>
-        throw new FeatureNotSupportedException("The flashlight is not available in the browser.");
-
-    public Task TurnOffAsync() =>
-        throw new FeatureNotSupportedException("The flashlight is not available in the browser.");
+    public async Task TurnOffAsync() =>
+        await BlazorEssentials.Module.InvokeVoidAsync("off");
 }
