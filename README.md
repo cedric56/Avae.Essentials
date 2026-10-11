@@ -46,11 +46,27 @@ services.UseAvaloniaEssentials();
 
 ### Blazor
 
-Register Blazor essentials (see `Blazor/` helpers), ensure `BlazorEssentials.js` is in `wwwroot`, and call `InitializeAsync()` on preferences before first read/write.
+```csharp
+services.UseBlazorEssentials();
+```
+
+`BlazorEssentials.js` is automatically copied in `wwwroot`, and call `InitializeAsync()`.
+
+```csharp
+var app = builder.Build();
+await BlazorEssentials.InitializeAsync(app.Services);
+```
+Or on Server when circuit provider changed
+```csharp
+async provider =>
+    await BlazorEssentials.InitializeAsync(provider));
+```
 
 ### MAUI-only
 
-Prefer official **Microsoft.Maui.Essentials**. Use this package when sharing hosts with Avalonia/Blazor.
+```csharp
+services.RegisterEssentials();
+```
 
 ---
 
