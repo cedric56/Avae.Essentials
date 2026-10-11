@@ -16,10 +16,18 @@
 
   <ItemGroup Condition="$(AvaeFeatures.Contains(';AVALONIA;'))">
     <PackageReference Include="Avalonia.Controls.Maui.Essentials"/>
-    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" PrivateAssets="compile" />
-    <PackageReference Condition="$(IsMacTFM) == 'true'" 
-                      Include="Microsoft.Maui.Platforms.MacOS.Essentials" />
-    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
+    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract">
+      <PrivateAssets>compile</PrivateAssets>
+    </PackageReference>
+    <PackageReference Condition="$(IsMacTFM) == 'true'"
+                      Include="Microsoft.Maui.Platforms.MacOS.Essentials">
+      <PrivateAssets>compile</PrivateAssets>
+      <ExcludeAssets>analyzers</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials">
+      <PrivateAssets>compile</PrivateAssets>
+      <ExcludeAssets>analyzers</ExcludeAssets>
+    </PackageReference>
     <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Avalonia\**\*.avalonia.cs" Visible="false" />      
   </ItemGroup>
 
