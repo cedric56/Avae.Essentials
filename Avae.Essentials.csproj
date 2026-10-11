@@ -29,17 +29,11 @@
     <SupportedOSPlatformVersion Condition="'$(IsAndroidTFM)' == 'true'">24</SupportedOSPlatformVersion>
   </PropertyGroup>
 
-  <!-- Conditionally define the symbols -->
-  <PropertyGroup>
-    <DefineConstants Condition="'$(IsWindowsOS)' == 'true'">$(DefineConstants);WINDOWS_OS</DefineConstants>
-    <DefineConstants Condition="'$(IsLinuxOS)' == 'true'">$(DefineConstants);LINUX_OS</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
     <None Include="build\Avae.Essentials.targets" Pack="true" PackagePath="buildTransitive\" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <Compile Remove="Blazor\**\*.*" />
     <TfmSpecificPackageFile Include="Blazor\**\*.*">
       <PackagePath>lib\$(TargetFramework)\Blazor\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
@@ -50,17 +44,20 @@
       <PackagePath>lib\$(TargetFramework)\Avalonia\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </TfmSpecificPackageFile>
-  </ItemGroup>
-  
-  <!-- Start clean -->
+  </ItemGroup>-->
   <ItemGroup>
     <Compile Remove="**\*.browser.cs" />
     <Compile Remove="**\*.avalonia.cs" />
-  </ItemGroup>
-
-  <!-- Windows -->
-  <ItemGroup Condition="'$(IsWindowsOS)' == 'true' AND '$(IsBrowserTFM)' != 'true' AND '$(IsMacTFM)' != 'true' AND '$(IsAndroidTFM)' != 'true' AND '$(IsIosTFM)' != 'true' AND '$(IsLinuxOS)' != 'true' AND '$(IsWindowsTFM)' != 'true'">
-    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" />
+    <Compile Remove="Blazor\**\*.*" />
+    <None Include="Blazor\**\*.*"
+      Exclude="Avalonia\bin\**\*;Avalonia\obj\**\*"
+      Pack="true"
+      PackagePath="buildTransitive\Blazor\%(RecursiveDir)%(Filename)%(Extension)" />
+    
+    <None Include="**\*.avalonia.cs"
+      Exclude="Avalonia\bin\**\*;Avalonia\obj\**\*"
+      Pack="true"
+      PackagePath="buildTransitive\Avalonia\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsWindowsTFM)' == 'true'">
@@ -81,7 +78,7 @@
     <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
   </ItemGroup>
 
-  <ItemGroup>    
+  <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Essentials" />
     <!--<PackageReference Include="Microsoft.JSInterop" />-->
   </ItemGroup>
