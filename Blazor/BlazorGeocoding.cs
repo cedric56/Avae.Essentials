@@ -1,4 +1,5 @@
-﻿using Microsoft.Maui.ApplicationModel;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,13 @@ public class BlazorGeocoding : IGeocoding
 {
     public async Task<IEnumerable<Placemark>> GetPlacemarksAsync(double latitude, double longitude)
     {
+        var httpClient = BlazorEssentials.Provider.GetService<HttpClient>();
         using var client = new HttpClient();
+        if (httpClient != null)
+            client.BaseAddress = httpClient.BaseAddress;
+
+        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
+
         // Nominatim reverse geocoding URL
         string url = $"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude}&lon={longitude}&addressdetails=1";
 
@@ -48,8 +55,12 @@ public class BlazorGeocoding : IGeocoding
 
     public async Task<IEnumerable<Location>> GetLocationsAsync(string address)
     {
+        var httpClient = BlazorEssentials.Provider.GetService<HttpClient>();
         using var client = new HttpClient();
-        // Nominatim request URL
+        if (httpClient != null)
+            client.BaseAddress = httpClient.BaseAddress;        // Nominatim request URL
+        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
+
         string url = $"https://nominatim.openstreetmap.org/search?format=json&q={Uri.EscapeDataString(address)}";
 
         // Make the request to the Nominatim API

@@ -104,6 +104,8 @@ public static class BlazorEssentials
 
     public static async Task InitializeAsync(IServiceProvider provider)
     {
+        Provider = provider;
+
         var js = provider.GetRequiredService<IJSRuntime>();
 
         Module?.DisposeAsync();
@@ -179,4 +181,5 @@ public static class BlazorEssentials
     }
 
     internal  static IJSObjectReference Module { get; set; } = null!;
+    internal static IServiceProvider Provider { get; set; } = null!;
 }
