@@ -142,7 +142,7 @@ public static class Extensions
         EssentialsAccessors.SetTextToSpeech(null, textToSpeech);
         EssentialsAccessors.SetVibration(null, vibration);
         EssentialsAccessors.SetVersionTracking(null, versionTracking?.Invoke());
-        services.RegisterEssentials(lifetime);
+        services.RegisterAvaeEssentials(lifetime);
     }
 
     /// <summary>
@@ -151,7 +151,7 @@ public static class Extensions
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
     /// <param name="lifetime">The service lifetime used when registering these implementations. Defaults to <see cref="ServiceLifetime.Singleton"/>.</param>
-    public static void RegisterEssentials(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
+    public static void RegisterAvaeEssentials(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
     {
         services.TryAdd(ServiceDescriptor.Describe(typeof(IAccelerometer), _ => Accelerometer.Default, lifetime));
         services.TryAdd(ServiceDescriptor.Describe(typeof(IAppActions), _ => AppActions.Current, lifetime));

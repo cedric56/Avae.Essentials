@@ -15,7 +15,7 @@ namespace Avae.Essentials;
 
 public static class AvaloniaExtensions
 {
-    public static void UseAvaloniaEssentials(this IServiceCollection services)
+    public static void UseAvaeEssentials(this IServiceCollection services)
     {
         AvaeDispatcher.Initialize(Dispatcher.CurrentDispatcher);
 
@@ -236,6 +236,6 @@ public static class AvaloniaExtensions
         }
 
         services.TryAdd(ServiceDescriptor.Describe(typeof(IDispatcher), _ => AvaeDispatcher.Default, ServiceLifetime.Singleton));
-        services.RegisterEssentials();
+        services.RegisterAvaeEssentials();
     }
 }

@@ -16,7 +16,7 @@ namespace Avae.Essentials;
 
 public static class BlazorEssentials
 {
-    public static void UseBlazorEssentials(this IServiceCollection services)
+    public static void UseAvaeBlazorEssentials(this IServiceCollection services)
     {
         var appInfo = new BlazorAppInfo();
         var preferences = new BlazorPreferences();
@@ -59,7 +59,7 @@ public static class BlazorEssentials
             () => new BlazorVersionTracking(preferences, appInfo),
             ServiceLifetime.Singleton);
 
-        services.RegisterEssentials();
+        services.RegisterAvaeEssentials();
     }
 
     public static (string pattern, string html) UseWebAuthenticator()

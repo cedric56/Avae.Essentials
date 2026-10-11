@@ -16,7 +16,7 @@
 
   <ItemGroup Condition="$(AvaeFeatures.Contains(';AVALONIA;'))">
     <PackageReference Include="Avalonia.Controls.Maui.Essentials"/>
-    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" />
+    <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" PrivateAssets="compile" />
     <PackageReference Condition="$(IsMacTFM) == 'true'" 
                       Include="Microsoft.Maui.Platforms.MacOS.Essentials" />
     <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
