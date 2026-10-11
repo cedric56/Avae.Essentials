@@ -231,3 +231,22 @@ public class BlazorCompass : BlazorSensorBase, ICompass
 			doc.RootElement.GetProperty("heading").GetDouble())));
 	}
 }
+
+public class BlazorMagnetometer : BlazorSensorBase, IMagnetometer
+{
+    public BlazorMagnetometer() : base("magnetometer") { }
+
+    public event EventHandler<MagnetometerChangedEventArgs>? ReadingChanged;
+
+    public async void Start(SensorSpeed sensorSpeed) => await StartCoreAsync(sensorSpeed);
+
+    private protected override void OnReadingCore(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        ReadingChanged?.Invoke(this, new MagnetometerChangedEventArgs(new MagnetometerData(
+            root.GetProperty("x").GetDouble(),
+            root.GetProperty("y").GetDouble(),
+            root.GetProperty("z").GetDouble())));
+    }
+}

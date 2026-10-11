@@ -1133,16 +1133,20 @@ export function sensorIsSupported(kind) {
 	switch (kind) {
 		case "accelerometer":
 		case "gyroscope":
-			return "DeviceMotionEvent" in globalThis;
+			//return "DeviceMotionEvent" in globalThis;
 
 		case "orientation":
 		case "compass":
 			return "DeviceOrientationEvent" in globalThis;
 
+		case "magnetometer":
+			return "magnetometer" in navigator;
+
 		default:
 			return false;
 	}
 }
+let magSensor = null;
 
 export async function sensorStart(dotNetRef, kind, frequencyHz) {
 	if (!sensorIsSupported(kind) || sensorHandlers[kind])
@@ -1225,6 +1229,18 @@ export async function sensorStart(dotNetRef, kind, frequencyHz) {
 			};
 			break;
 
+		case "magnetometer":
+			eventName = "reading";
+			magSensor = new Magnetometer({ frequency: frequencyHz });
+			handler = () => notify({
+				x: magSensor.x ?? 0,
+				y: magSensor.y ?? 0,
+				z: magSensor.z ?? 0
+			});
+			magSensor.addEventListener("reading", handler);
+			magSensor.start();
+			break;
+
 		default:
 			return false;
 	}
@@ -1234,8 +1250,9 @@ export async function sensorStart(dotNetRef, kind, frequencyHz) {
 		handler
 	};
 
-	globalThis.addEventListener(eventName, handler);
-
+	if (kind !== "magnetometer")
+		globalThis.addEventListener(eventName, handler);
+	
 	return true;
 }
 
@@ -1243,11 +1260,16 @@ export function sensorStop(kind) {
 	const entry = sensorHandlers[kind];
 
 	if (entry) {
-		globalThis.removeEventListener(
-			entry.eventName,
-			entry.handler
-		);
 
+		if (magSensor !== null) {
+			magSensor.removeEventListener(entry.eventName, entry.handler);
+		}
+		else {
+			globalThis.removeEventListener(
+				entry.eventName,
+				entry.handler
+			);
+		}
 		delete sensorHandlers[kind];
 	}
 }
