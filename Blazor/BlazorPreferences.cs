@@ -20,6 +20,12 @@ namespace Avae.Essentials;
 /// </summary>
 public sealed class BlazorPreferences : IPreferences
 {
+    private readonly object _pendingLock = new();
+    private readonly Dictionary<long, Task> _pending = new();
+    private readonly ConcurrentQueue<Exception> _persistenceErrors = new();
+    private long _nextOperationId;
+
+
     private const string KeyPrefix = "maui:prefs:";
 
     private readonly ConcurrentDictionary<string, string> _cache = new();
@@ -65,7 +71,7 @@ public sealed class BlazorPreferences : IPreferences
     {
         var storageKey = GetStorageKey(key, sharedName);
         if (_cache.TryRemove(storageKey, out _))
-            PersistRemove(storageKey);
+            TrackPersistence(() => PersistRemoveAsync(storageKey));
     }
 
     public void Clear(string? sharedName = null)
@@ -74,7 +80,7 @@ public sealed class BlazorPreferences : IPreferences
         foreach (var storageKey in _cache.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
             if (_cache.TryRemove(storageKey, out _))
-                PersistRemove(storageKey);
+                TrackPersistence(() => PersistRemoveAsync(storageKey));
         }
     }
 
@@ -85,7 +91,7 @@ public sealed class BlazorPreferences : IPreferences
         if (value is null)
         {
             if (_cache.TryRemove(storageKey, out _))
-                PersistRemove(storageKey);
+                TrackPersistence(() => PersistRemoveAsync(storageKey));
             return;
         }
 
@@ -98,7 +104,7 @@ public sealed class BlazorPreferences : IPreferences
         };
 
         _cache[storageKey] = stored;
-        PersistSet(storageKey, stored);
+        TrackPersistence(() => PersistSetAsync(storageKey, stored));
     }
 
     public T Get<T>(string key, T defaultValue, string? sharedName = null)
@@ -124,7 +130,7 @@ public sealed class BlazorPreferences : IPreferences
 
     // ── Persistence: fire-and-forget, but serialized per key ──────────────
 
-    private async void PersistSet(string storageKey, string value)
+    private async Task PersistSetAsync(string storageKey, string value)
     {
         var gate = GetLock(storageKey);
         await gate.WaitAsync().ConfigureAwait(false);
@@ -150,7 +156,7 @@ public sealed class BlazorPreferences : IPreferences
         }
     }
 
-    private async void PersistRemove(string storageKey)
+    private async Task PersistRemoveAsync(string storageKey)
     {
         var gate = GetLock(storageKey);
         await gate.WaitAsync().ConfigureAwait(false);
