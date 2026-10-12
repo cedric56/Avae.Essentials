@@ -2,7 +2,7 @@
 
 Cross-host implementations of **.NET MAUI Essentials**-style APIs so the same ViewModels can run on **Avalonia**, **Blazor / WebAssembly**, and platform backends (Windows, Linux, macOS, mobile TFMs).
 
-Contracts stay aligned with `Microsoft.Maui.Essentials` (`IGeolocation`, `IClipboard`, `IVibration`, …). Host code is registered through DI and `EssentialsAccessors` (`UnsafeAccessor` into MAUI static facades).
+Contracts stay aligned with `Microsoft.Maui.Essentials` (`IGeolocation`, `IClipboard`, `IVibration`, …). Interfaces are registered through DI and availables with static accessors (`Geolocation.Default`, `Clipboard.Default`, `Vibration.Default`, …).
 
 **License:** MIT — [LICENSE.txt](LICENSE.txt)
 
