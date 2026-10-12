@@ -21,7 +21,12 @@
     <IsAotCompatible>true</IsAotCompatible>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>1.0.0-preview.3</Version>
+    <Version>1.0.0-preview.1</Version>
+    <PackageId>Avae.Essentials</PackageId>
+    <Authors>Cedric</Authors>
+    <Description>Maui essentials on Maui/Blazor/Avalonia</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -29,6 +34,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="build\Avae.Essentials.targets" Pack="true" PackagePath="buildTransitive\" />
   </ItemGroup>
   
