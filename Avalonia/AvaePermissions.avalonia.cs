@@ -8,6 +8,8 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using Windows.ApplicationModel;
+using System.Collections.Concurrent;
+using System.IO;
 using Windows.ApplicationModel.Contacts;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Geolocation;
@@ -19,7 +21,13 @@ namespace Avae.Essentials
 	[SupportedOSPlatform("windows10.0.10240")]
 	public static partial class AvaePermissions
 	{
-		static readonly Lazy<bool> _isPackagedAppLazy = new Lazy<bool>(() =>
+        private static readonly Lazy<HashSet<string>> DeclaredCapabilities =
+    new(LoadDeclaredCapabilities);
+
+        private static readonly ConcurrentDictionary<string, bool>
+            CapabilityLookupCache = new(StringComparer.OrdinalIgnoreCase);
+
+        static readonly Lazy<bool> _isPackagedAppLazy = new Lazy<bool>(() =>
 		{
 			try
 			{
@@ -52,26 +60,60 @@ namespace Avae.Essentials
 		public static string PlatformGetFullAppPackageFilePath => platformGetFullAppPackageFilePath.Value;
 
 
-		/// <summary>
-		/// Checks if the capability specified in <paramref name="capabilityName"/> is declared in the application's <c>AppxManifest.xml</c> file.
-		/// </summary>
-		/// <param name="capabilityName">The capability to check for specification in the <c>AppxManifest.xml</c> file.</param>
-		/// <returns><see langword="true"/> when the capability is specified, otherwise <see langword="false"/>.</returns>
-		public static bool IsCapabilityDeclared(string capabilityName)
-		{
-			var docPath = OriginalFileSystemUtils.PlatformGetFullAppPackageFilePath(PlatformUtils.AppManifestFilename);
-			var doc = XDocument.Load(docPath, LoadOptions.None);
-			var reader = doc.CreateReader();
-			var namespaceManager = new XmlNamespaceManager(reader.NameTable);
-			namespaceManager.AddNamespace("x", PlatformUtils.AppManifestXmlns);
-			namespaceManager.AddNamespace("uap", PlatformUtils.AppManifestUapXmlns);
-			if (doc.Root == null)
-				return false;
-			// If the manifest doesn't contain a capability we need, throw
-			return (doc.Root.XPathSelectElements($"//x:DeviceCapability[@Name='{capabilityName}']", namespaceManager)?.Any() ?? false) ||
-				(doc.Root.XPathSelectElements($"//x:Capability[@Name='{capabilityName}']", namespaceManager)?.Any() ?? false) ||
-				(doc.Root.XPathSelectElements($"//uap:Capability[@Name='{capabilityName}']", namespaceManager)?.Any() ?? false);
-		}
+        /// <summary>
+        /// Checks if the capability specified in <paramref name="capabilityName"/> is declared in the application's <c>AppxManifest.xml</c> file.
+        /// </summary>
+        /// <param name="capabilityName">The capability to check for specification in the <c>AppxManifest.xml</c> file.</param>
+        /// <returns><see langword="true"/> when the capability is specified, otherwise <see langword="false"/>.</returns>
+        public static bool IsCapabilityDeclared(string capabilityName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(capabilityName);
+
+            // Unpackaged Win32 apps do not have an installed Appx manifest.
+            // Manifest declarations are therefore not applicable to them.
+            if (!IsPackagedApp)
+                return true;
+
+            return CapabilityLookupCache.GetOrAdd(
+                capabilityName,
+                name => DeclaredCapabilities.Value.Contains(name));
+        }
+
+        private static HashSet<string> LoadDeclaredCapabilities()
+        {
+            var capabilities = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
+            var manifestPath = OriginalFileSystemUtils
+                .PlatformGetFullAppPackageFilePath(
+                    PlatformUtils.AppManifestFilename);
+
+            if (!File.Exists(manifestPath))
+                throw new FileNotFoundException(
+                    "The packaged application manifest could not be found.",
+                    manifestPath);
+
+            var doc = XDocument.Load(manifestPath, LoadOptions.None);
+            if (doc.Root is null)
+                return capabilities;
+
+            XNamespace foundation = PlatformUtils.AppManifestXmlns;
+            XNamespace uap = PlatformUtils.AppManifestUapXmlns;
+
+            foreach (var element in doc.Root.Descendants())
+            {
+                if (element.Name == foundation + "Capability" ||
+                    element.Name == foundation + "DeviceCapability" ||
+                    element.Name == uap + "Capability")
+                {
+                    var name = (string?)element.Attribute("Name");
+                    if (!string.IsNullOrWhiteSpace(name))
+                        capabilities.Add(name);
+                }
+            }
+
+            return capabilities;
+        }
 
         internal static async Task EnsureGrantedAsync<TPermission>()
             where TPermission : AvaeBasePlatformPermission, new()
