@@ -31,6 +31,14 @@ Blazor sources are included automatically when the Web / Blazor WebAssembly SDK 
 ```csharp
 services.UseAvaeEssentials();
 ```
+OR
+
+```chsarp
+ public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UseAvaeEssentials()
+            .UsePlatformDetect();
+```
 
 ### Blazor
 
