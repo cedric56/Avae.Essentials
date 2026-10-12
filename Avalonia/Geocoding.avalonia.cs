@@ -9,15 +9,28 @@ namespace Avae.Essentials;
 
 class AvaeGeocoding : IGeocoding
 {
+    private static readonly HttpClient Client = CreateClient();
+
+    private static HttpClient CreateClient()
+    {
+        var client = new HttpClient
+        {
+            BaseAddress = new Uri("https://nominatim.openstreetmap.org/")
+        };
+
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Avae.Essentials/1.0");
+
+        return client;
+    }
+
     public async Task<IEnumerable<Placemark>> GetPlacemarksAsync(double latitude, double longitude)
     {
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
         // Nominatim reverse geocoding URL
         string url = $"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude}&lon={longitude}&addressdetails=1";
 
         // Make the request to the Nominatim API
-        var response = await client.GetStringAsync(url);
+        var response = await Client.GetStringAsync(url);
 
         // Parse the JSON response
         var data = JsonSerializer.Deserialize(response, AvaeJsonSerializerContext.Default.PlacemarkResponseInterop);
@@ -44,14 +57,11 @@ class AvaeGeocoding : IGeocoding
 
     public async Task<IEnumerable<Location>> GetLocationsAsync(string address)
     {
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
-
         // Nominatim request URL
         string url = $"https://nominatim.openstreetmap.org/search?format=json&q={Uri.EscapeDataString(address)}";
 
         // Make the request to the Nominatim API
-        var response = await client.GetStringAsync(url);
+        var response = await Client.GetStringAsync(url);
 
         // Parse the JSON response
         var data = JsonSerializer.Deserialize(response, AvaeJsonSerializerContext.Default.IEnumerableNominatimResponse);

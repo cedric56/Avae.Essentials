@@ -15,20 +15,32 @@ namespace Avae.Essentials;
 /// <summary>Geocoding requires a service backend; none is available in the browser.</summary>
 public class BlazorGeocoding : IGeocoding
 {
+    private static readonly HttpClient Client = CreateClient();
+
+    private static HttpClient CreateClient()
+    {
+        var client = new HttpClient
+        {
+            BaseAddress = new Uri("https://nominatim.openstreetmap.org/")
+        };
+
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Avae.Essentials/1.0");
+
+        return client;
+    }
+
     public async Task<IEnumerable<Placemark>> GetPlacemarksAsync(double latitude, double longitude)
     {
         var httpClient = BlazorEssentials.Provider.GetService<HttpClient>();
-        using var client = new HttpClient();
         if (httpClient != null)
-            client.BaseAddress = httpClient.BaseAddress;
-
-        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
+            Client.BaseAddress = httpClient.BaseAddress;
 
         // Nominatim reverse geocoding URL
         string url = $"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude}&lon={longitude}&addressdetails=1";
 
         // Make the request to the Nominatim API
-        var response = await client.GetStringAsync(url);
+        var response = await Client.GetStringAsync(url);
 
         // Parse the JSON response
         var data = JsonSerializer.Deserialize(response, AvaeJsonSerializerContext.Default.PlacemarkResponseInterop);
@@ -56,15 +68,13 @@ public class BlazorGeocoding : IGeocoding
     public async Task<IEnumerable<Location>> GetLocationsAsync(string address)
     {
         var httpClient = BlazorEssentials.Provider.GetService<HttpClient>();
-        using var client = new HttpClient();
         if (httpClient != null)
-            client.BaseAddress = httpClient.BaseAddress;        // Nominatim request URL
-        client.DefaultRequestHeaders.Add("User-Agent", "Avae.Essentials/1.0");
+            Client.BaseAddress = httpClient.BaseAddress;
 
         string url = $"https://nominatim.openstreetmap.org/search?format=json&q={Uri.EscapeDataString(address)}";
 
         // Make the request to the Nominatim API
-        var response = await client.GetStringAsync(url);
+        var response = await Client.GetStringAsync(url);
 
         // Parse the JSON response
         var data = JsonSerializer.Deserialize(response, AvaeJsonSerializerContext.Default.IEnumerableNominatimResponse);
