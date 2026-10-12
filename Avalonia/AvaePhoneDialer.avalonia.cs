@@ -1,6 +1,8 @@
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.Communication;
 using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Avae.Essentials;
 
@@ -21,13 +23,22 @@ partial class AvaePhoneDialer : IPhoneDialer
     public bool IsSupported =>
         true;
 
-    public async void Open(string number)
+    public void Open(string number)
+    {
+        try
+        {
+            _ = OpenAsync(number);
+        }
+        catch (Exception ex)
+        {
+            // Handles synchronous failures only.
+            Debug.WriteLine($"Phone dialer failed: {ex}");
+        }
+    }
+
+    public Task OpenAsync(string number)
     {
         ValidateOpen(number);
-
-        //if (ApiInformation.IsTypePresent("Windows.ApplicationModel.Calls.PhoneCallManager"))
-        //	PhoneCallManager.ShowPhoneCallUI(number, string.Empty);
-        //else
-        await Launcher.OpenAsync($"tel:{number}");
+        return Launcher.OpenAsync($"tel:{number}");
     }
 }
