@@ -10,11 +10,24 @@ using AvaloniaPreferences = Avalonia.Controls.Maui.Essentials.AvaloniaPreference
 using AvaloniaScreenshot = Avalonia.Controls.Maui.Essentials.AvaloniaScreenshot;
 using AvaloniaMediaPicker = Avalonia.Controls.Maui.Essentials.AvaloniaMediaPicker;
 using Dispatcher = Avalonia.Threading.Dispatcher;
+using Avalonia;
 
 namespace Avae.Essentials;
 
 public static class AvaloniaExtensions
 {
+    /// <summary>
+    /// Might use method on directly via services
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <returns></returns>
+    public static AppBuilder UseAvaeEssentials(this AppBuilder builder)
+    {
+        var services = new ServiceCollection();
+        services.UseAvaeEssentials();
+        return builder;
+    }
+
     public static void UseAvaeEssentials(this IServiceCollection services)
     {
         AvaeDispatcher.Initialize(Dispatcher.CurrentDispatcher);
