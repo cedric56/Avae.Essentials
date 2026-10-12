@@ -9,7 +9,7 @@
       net11.0-macos;
       net11.0-windows10.0.19041
     </TargetFrameworks>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!--<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>-->
     <Nullable>enable</Nullable>
     <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux'))">true</IsLinuxOS>
     <IsWindowsOS>$([MSBuild]::IsOSPlatform('windows'))</IsWindowsOS>
@@ -32,36 +32,22 @@
   <ItemGroup>
     <None Include="build\Avae.Essentials.targets" Pack="true" PackagePath="buildTransitive\" />
   </ItemGroup>
-
-  <!--<ItemGroup>
+  
+  <ItemGroup>
     <Compile Remove="Blazor\**\*.*" />
     <TfmSpecificPackageFile Include="Blazor\**\*.*">
       <PackagePath>lib\$(TargetFramework)\Blazor\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </TfmSpecificPackageFile>
-
-    <TfmSpecificPackageFile Include="**\*.avalonia.cs">
+    <Compile Remove="Avalonia\**\*.*" />
+    <TfmSpecificPackageFile Include="Avalonia\**\*.*">
       <PackagePath>lib\$(TargetFramework)\Avalonia\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </TfmSpecificPackageFile>
-  </ItemGroup>-->
-  <ItemGroup>
-    <Compile Remove="**\*.browser.cs" />
-    <Compile Remove="**\*.avalonia.cs" />
-    <Compile Remove="Blazor\**\*.*" />
-    <None Include="Blazor\**\*.*"
-      Exclude="Avalonia\bin\**\*;Avalonia\obj\**\*"
-      Pack="true"
-      PackagePath="buildTransitive\Blazor\%(RecursiveDir)%(Filename)%(Extension)" />
-    
-    <None Include="**\*.avalonia.cs"
-      Exclude="Avalonia\bin\**\*;Avalonia\obj\**\*"
-      Pack="true"
-      PackagePath="buildTransitive\Avalonia\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsWindowsTFM)' == 'true'">
-    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
   </ItemGroup>
 
   <!-- Browser -->
@@ -71,15 +57,15 @@
 
   <!-- macOS -->
   <ItemGroup Condition="'$(IsMacTFM)' == 'true'">
-    <PackageReference Include="Microsoft.Maui.Platforms.MacOS.Essentials" />
+    <PackageReference Include="Microsoft.Maui.Platforms.MacOS.Essentials" Version="0.1.0-preview.12.26368.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsLinuxOS)' == 'true'">
-    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" />
+    <PackageReference Include="Microsoft.Maui.Platforms.Linux.Gtk4.Essentials" Version="0.1.0-preview.12.26421.1" />
   </ItemGroup>
-
+ 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Maui.Essentials" />
+    <PackageReference Include="Microsoft.Maui.Essentials" Version="11.0.0-rc.1.26451.6" />
     <!--<PackageReference Include="Microsoft.JSInterop" />-->
   </ItemGroup>
 </Project>
