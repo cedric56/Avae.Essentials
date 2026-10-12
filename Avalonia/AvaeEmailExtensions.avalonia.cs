@@ -208,10 +208,10 @@ public static class AvaeEmailExtensions
             // Attachments
             foreach (var attachment in message.Attachments ?? [])
             {
-                if (attachment is AvaeEmailAttachment)
+                if (attachment is AvaeEmailAttachment avae)
                 {
-                    using var stream = await attachment.OpenReadAsync();
-                    await AppendAttachement(attachment.ContentType, stream);
+                    using var stream = await avae.OpenAvaloniaReadAsync();
+                    await AppendAttachement(avae.ContentType, stream);
                 }
                 else if (!OperatingSystem.IsBrowser())
                 {

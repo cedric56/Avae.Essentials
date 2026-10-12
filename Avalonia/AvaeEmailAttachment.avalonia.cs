@@ -16,7 +16,7 @@ class AvaeEmailAttachment : EmailAttachment
         storageFile = file.StorageFile;
     }
 
-    public new Task<Stream> OpenReadAsync()
+    public Task<Stream> OpenAvaloniaReadAsync()
     {
         return storageFile.OpenReadAsync();
     }
