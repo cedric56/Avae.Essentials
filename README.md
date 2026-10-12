@@ -56,8 +56,12 @@ async provider =>
 services.RegisterAvaeEssentials();
 ```
 
----
+# Contributing
 
-## Relationship to MAUI Essentials
+Contributions are welcome! Please submit issues or pull requests to the GitHub repository. Ensure your code follows the project’s coding standards.
 
-Same interface shapes; extra hosts for Avalonia and Blazor. Mobile TFMs often defer to official MAUI/platform packages (“backend”). Not a drop-in guarantee of full MAUI parity on every device.
+# Acknowledgments
+
+Thanks to the Avalonia team for their robust UI framework.
+
+Gratitude to the MAUI team for providing cross-platform essentials.
