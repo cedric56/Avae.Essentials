@@ -8,16 +8,7 @@ Contracts stay aligned with `Microsoft.Maui.Essentials` (`IGeolocation`, `IClipb
 
 ---
 
-## Package layout
-
-| Path | Role |
-|------|------|
-| `lib/<tfm>/Avae.Essentials.dll` | Core registration, accessors, shared helpers |
-| `lib/<tfm>/Avalonia/**/*.avalonia.cs` | Avalonia / desktop host sources (opt-in) |
-| `lib/<tfm>/Blazor/**` | Blazor implementations + JS module (opt-in) |
-| `buildTransitive/Avae.Essentials.targets` | Conditionally compiles feature packs |
-
-**TFMs:** `net11.0`, `net11.0-browser`, `net11.0-ios`, `net11.0-android`, `net11.0-macos`, `net11.0-windows10.0.19041`
+**TFMs:** `net11.0` (Windows/Linux supported), `net11.0-browser`, `net11.0-ios`, `net11.0-android`, `net11.0-macos`, `net11.0-windows10.0.19041`
 
 ### Enable Avalonia feature pack
 
