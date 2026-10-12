@@ -18,13 +18,6 @@ public partial class AvaeShareFile : ShareFile
         FileName = result.FileName;
     }
 
-    public new Task<Stream> OpenReadAsync()
-    {
-        if (_storageFile != null)
-            return _storageFile.OpenReadAsync();
-        return Task.FromResult<Stream>(File.OpenRead(FullPath));
-    }
-
     public Task<Stream> OpenFileReadAsync()
     {
         if (_storageFile != null)

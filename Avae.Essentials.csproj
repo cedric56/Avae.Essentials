@@ -71,5 +71,7 @@
  
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Essentials" Version="11.0.0-rc.1.26451.6" />
+    <!--<PackageReference Include="Avalonia.Controls.Maui.Essentials" Version="11.0.0-rc.1.26252.343" />-->
+
   </ItemGroup>
 </Project>

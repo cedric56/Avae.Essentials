@@ -86,15 +86,17 @@ partial class AvaeDeviceDisplay
 {
     readonly object locker = new object();
     readonly AvaeActiveWindowTracker _activeWindowTracker;
+    readonly AvaeTopLevelStateManager _topLevelStateManager;
 
     DisplayRequest? displayRequest;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AvaeDeviceDisplay"/> class.
     /// </summary>
-    public AvaeDeviceDisplay()
+    public AvaeDeviceDisplay(AvaeTopLevelStateManager topLevelStateManager)
     {
-        _activeWindowTracker = new(AvaeWindowStateManager.Default);
+        _topLevelStateManager = topLevelStateManager;
+        _activeWindowTracker = new(topLevelStateManager);
         _activeWindowTracker.WindowMessage += OnWindowMessage;
     }
 
@@ -131,7 +133,7 @@ partial class AvaeDeviceDisplay
 
     protected override DisplayInfo GetMainDisplayInfo()
     {
-        var windowHandle = AvaeWindowStateManager.Default.GetActiveWindowHandle(false);
+        var windowHandle = _topLevelStateManager.GetActiveWindowHandle(false);
         var mi = GetDisplay(windowHandle);
 
         if (mi == null)

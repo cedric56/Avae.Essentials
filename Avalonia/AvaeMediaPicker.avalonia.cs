@@ -18,7 +18,7 @@ using Launcher = Windows.System.Launcher;
 namespace Avae.Essentials;
 
 [SupportedOSPlatform("windows10.0.10240")]
-public class AvaeMediaPicker(AvaloniaMediaPicker picker) : IMediaPicker
+public class AvaeMediaPicker(AvaeTopLevelStateManager topLevelStateManager, AvaloniaMediaPicker picker) : IMediaPicker
 {
     public class AvaeFileResult(string fullPath, string contentType) : FileResult(fullPath, contentType), IAvaeFileResult
     {
@@ -41,7 +41,7 @@ public class AvaeMediaPicker(AvaloniaMediaPicker picker) : IMediaPicker
 
     public async Task<FileResult?> CapturePhotoAsync(MediaPickerOptions? options = null)
     {
-        var captureUi = new WinUICameraCaptureUI();
+        var captureUi = new WinUICameraCaptureUI(topLevelStateManager);
         captureUi.PhotoSettings.Format = CameraCaptureUIPhotoFormat.Jpeg;
         var file = await captureUi.CaptureFileAsync(CameraCaptureUIMode.Photo);
 
@@ -56,7 +56,7 @@ public class AvaeMediaPicker(AvaloniaMediaPicker picker) : IMediaPicker
 
     public async Task<FileResult?> CaptureVideoAsync(MediaPickerOptions? options = null)
     {
-        var captureUi = new WinUICameraCaptureUI();
+        var captureUi = new WinUICameraCaptureUI(topLevelStateManager);
         captureUi.VideoSettings.Format = CameraCaptureUIVideoFormat.Mp4;
         var file = await captureUi.CaptureFileAsync(CameraCaptureUIMode.Video);
         if (file is not null)
@@ -88,7 +88,7 @@ public class AvaeMediaPicker(AvaloniaMediaPicker picker) : IMediaPicker
         return picker.PickVideosAsync(options);
     }
 
-    class WinUICameraCaptureUI
+    class WinUICameraCaptureUI(AvaeTopLevelStateManager topLevelStateManager)
     {
         const string WindowsCameraAppPackageName = "Microsoft.WindowsCamera_8wekyb3d8bbwe";
         const string WindowsCameraAppUri = "microsoft.windows.camera.picker:";
@@ -102,7 +102,7 @@ public class AvaeMediaPicker(AvaloniaMediaPicker picker) : IMediaPicker
 
         public async Task<StorageFile?> CaptureFileAsync(CameraCaptureUIMode mode)
         {
-            var hwnd = AvaeWindowStateManager.Default.GetActiveWindowHandle(false);
+            var hwnd = topLevelStateManager.GetActiveWindowHandle(false);
 
             var options = new LauncherOptions();
             options.As<IInitializeWithWindow>().Initialize(hwnd);

@@ -16,7 +16,7 @@ using ContactPhone = Microsoft.Maui.ApplicationModel.Communication.ContactPhone;
 namespace Avae.Essentials;
 
 [SupportedOSPlatform("windows10.0.10240")]
-class OriginalContactsImplementation : IContacts
+class OriginalContactsImplementation(AvaeTopLevelStateManager topLevelStateManager) : IContacts
 {
     [ComImport]
     [Guid("3E68D4BD-7135-4D10-8018-9FB6D9F33FA1")]
@@ -29,7 +29,7 @@ class OriginalContactsImplementation : IContacts
     public async Task<Contact?> PickContactAsync()
     {
         var contactPicker = new ContactPicker();
-        var hwnd = AvaeWindowStateManager.Default.GetActiveWindowHandle(false);
+        var hwnd = topLevelStateManager.GetActiveWindowHandle(false);
         contactPicker.As<IInitializeWithWindow>().Initialize(hwnd);
         var contactSelected = await contactPicker.PickContactAsync();
         return ConvertContact(contactSelected);

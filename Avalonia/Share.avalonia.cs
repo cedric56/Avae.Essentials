@@ -16,11 +16,11 @@ using WinRT;
 namespace Avae.Essentials;
 
 [SupportedOSPlatform("windows10.0.10240")]
-partial class OriginalShareImplementation : IAvaeShare
+partial class OriginalShareImplementation(AvaeTopLevelStateManager platformProvider) : IAvaeShare
 {
     public Task RequestAsync(ShareTextRequest request)
     {
-        var hwnd = AvaeWindowStateManager.Default.GetActiveWindowHandle(false);
+        var hwnd = platformProvider.GetActiveWindowHandle(false);
         var dataTransferManager = OriginalDataTransferManagerHelper.GetDataTransferManager(hwnd);
 
         dataTransferManager.DataRequested += ShareTextHandler;
@@ -61,7 +61,7 @@ partial class OriginalShareImplementation : IAvaeShare
         foreach (var file in request.Files ?? [])
             storageFiles.Add(await StorageFile.GetFileFromPathAsync(file.FullPath));
 
-        var hwnd = AvaeWindowStateManager.Default.GetActiveWindowHandle(false);
+        var hwnd = platformProvider.GetActiveWindowHandle(false);
         var dataTransferManager = OriginalDataTransferManagerHelper.GetDataTransferManager(hwnd);
 
         dataTransferManager.DataRequested += ShareTextHandler;

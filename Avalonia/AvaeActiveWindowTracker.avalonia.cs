@@ -1,5 +1,6 @@
 ﻿#nullable enable
 
+using Avalonia.Controls;
 using System;
 using Window = Avalonia.Controls.Window;
 
@@ -7,11 +8,11 @@ namespace Avae.Essentials;
 
 class AvaeActiveWindowTracker
 {
-    readonly IAvaeWindowStateManager _windowStateManager;
+    readonly AvaeTopLevelStateManager _windowStateManager;
 
     AvaeWindowMessageManager? _currentWindowManager;
 
-    public AvaeActiveWindowTracker(IAvaeWindowStateManager windowStateManager)
+    public AvaeActiveWindowTracker(AvaeTopLevelStateManager windowStateManager)
     {
         _windowStateManager = windowStateManager;
     }
@@ -20,26 +21,26 @@ class AvaeActiveWindowTracker
 
     public void Start()
     {
-        var window = _windowStateManager.GetActiveWindow();
+        var window = _windowStateManager.GetTopLevel();
         OnActiveWindowChanged(window);
 
-        _windowStateManager.ActiveWindowChanged += OnActiveWindowChanged;
+        _windowStateManager.ActiveTopLevelChanged += OnActiveWindowChanged;
     }
 
     public void Stop()
     {
         OnActiveWindowChanged(null);
 
-        _windowStateManager.ActiveWindowChanged -= OnActiveWindowChanged;
+        _windowStateManager.ActiveTopLevelChanged -= OnActiveWindowChanged;
     }
 
     void OnActiveWindowChanged(object? sender, EventArgs e)
     {
-        var window = _windowStateManager?.GetActiveWindow();
+        var window = _windowStateManager?.GetTopLevel();
         OnActiveWindowChanged(window);
     }
 
-    void OnActiveWindowChanged(Window? window)
+    void OnActiveWindowChanged(TopLevel? window)
     {
         if (_currentWindowManager is not null)
         {
@@ -47,9 +48,9 @@ class AvaeActiveWindowTracker
             _currentWindowManager = null;
         }
 
-        if (window is not null)
+        if (window is Window w)
         {
-            _currentWindowManager = AvaeWindowMessageManager.Get(window);
+            _currentWindowManager = AvaeWindowMessageManager.Get(w);
             _currentWindowManager.WindowMessage += OnWindowMessage;
         }
     }

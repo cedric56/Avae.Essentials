@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace Avae.Essentials;
 
-partial class AvaeSemanticScreenReader : ISemanticScreenReader
+partial class AvaeSemanticScreenReader(AvaeTopLevelStateManager topLevelStateManager) : ISemanticScreenReader
 {
     [Flags]
     public enum ProviderOptions
@@ -105,7 +105,7 @@ partial class AvaeSemanticScreenReader : ISemanticScreenReader
     public void Announce(string text)
     {
         // Get HWND for your active window
-        IntPtr windowHwnd = AvaeWindowStateManager.Default.GetActiveWindowHandle(false);
+        IntPtr windowHwnd = topLevelStateManager.GetActiveWindowHandle(false);
         if (windowHwnd == IntPtr.Zero)
             return;
 

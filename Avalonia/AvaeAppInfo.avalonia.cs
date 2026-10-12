@@ -29,9 +29,9 @@ class AvaeAppInfo : IAppInfo
     /// <summary>
     /// Initializes a new <see cref="AppInfoImplementation"/> object with default values.
     /// </summary>
-    public AvaeAppInfo()
+    public AvaeAppInfo(AvaeTopLevelStateManager topLevelStateManager)
     {
-        _activeWindowTracker = new(AvaeWindowStateManager.Default);
+        _activeWindowTracker = new(topLevelStateManager);
         _activeWindowTracker.Start();
         _activeWindowTracker.WindowMessage += OnWindowMessage;
 
