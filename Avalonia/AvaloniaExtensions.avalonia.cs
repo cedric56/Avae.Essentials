@@ -128,6 +128,8 @@ public static class AvaloniaExtensions
         else if (OperatingSystem.IsMacOS())
         {
 #if MACOS
+            NSApplication.CheckForIllegalCrossThreadCalls = false;
+
             services.SetDefaults(
                 null!,
                 null!,
