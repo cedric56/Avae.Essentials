@@ -201,11 +201,15 @@ public static class Extensions
     /// </param>
     /// <returns>A task that resolves to a readable stream for the file's contents.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="file"/> is <see langword="null"/>.</exception>
-    public static Task<Stream> OpenReadAsync(this FileBase file, bool overridesMauiPlatform = true)
+    public static Task<Stream> OpenReadAsync(
+    this FileBase file,
+    bool overridesMauiPlatform = true)
     {
-        if (file == null) throw new ArgumentNullException(nameof(file));
-        if (file is IAvaeFileResult avaeFileResult)
+        ArgumentNullException.ThrowIfNull(file);
+
+        if (overridesMauiPlatform && file is IAvaeFileResult avaeFileResult)
             return avaeFileResult.OpenFileStreamAsync();
+
         return file.OpenReadAsync();
     }
 
@@ -217,22 +221,28 @@ public static class Extensions
     /// <param name="files">The files to attach to the email.</param>
     /// <param name="message">The email message to compose.</param>
     /// <returns>A task representing the asynchronous compose operation.</returns>
-    public static Task ComposeAsync(this IEmail email, IEnumerable<FileBase> files, EmailMessage message)
+    public static Task ComposeAsync(
+    this IEmail email,
+    IEnumerable<FileBase> files,
+    EmailMessage message)
     {
+        ArgumentNullException.ThrowIfNull(email);
+        ArgumentNullException.ThrowIfNull(message);
+
+        var incomingFiles = files?.ToList() ?? [];
+
         if (email is IAvaeEmail avae)
+            return avae.ComposeAsync(incomingFiles, message);
+
+        var attachments = message.Attachments?.ToList() ?? [];
+
+        foreach (var file in incomingFiles)
         {
-            return avae.ComposeAsync(files, message);
+            attachments.Add(new EmailAttachment(file.FullPath));
         }
-        else
-        {
-            var attachments = new List<EmailAttachment>();
-            foreach (var file in files ?? [])
-            {
-                attachments.Add(new EmailAttachment(file.FullPath));
-            }
-            message.Attachments = attachments;
-            return email.ComposeAsync(message);
-        }
+
+        message.Attachments = attachments;
+        return email.ComposeAsync(message);
     }
 
     /// <summary>
