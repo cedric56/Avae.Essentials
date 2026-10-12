@@ -2,6 +2,7 @@ using Microsoft.JSInterop;
 using Microsoft.Maui.Devices;
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Avae.Essentials;
@@ -16,7 +17,7 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
 {
     public sealed record Snapshot(double Width, double Height, double PixelRatio, string OrientationType, bool WakeLockActive);
     public sealed record ChangeSnapshot(double Width, double Height, double PixelRatio, string OrientationType);
-
+    private readonly SemaphoreSlim _watchingLock = new(1, 1);
     private DotNetObjectReference<BlazorDeviceDisplay>? _ref;
     private bool _watching;
 
@@ -54,11 +55,35 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
     public bool KeepScreenOn
     {
         get => _wakeLockActive;
-        set
+        set => _ = SetWakeLockSafelyAsync(value);
+    }
+
+    private async Task SetWakeLockSafelyAsync(bool on)
+    {
+        try
         {
-            EnsureWatching();
-            _ = SetWakeLockAsync(value);
+            await EnsureWatchingAsync().ConfigureAwait(false);
+
+            var reference = _ref
+                ?? throw new InvalidOperationException(
+                    "The display callback reference was not initialized.");
+
+            await BlazorEssentials.Module.InvokeVoidAsync(
+                "ddSetWakeLock", reference, on).ConfigureAwait(false);
         }
+
+#if DEBUG
+catch (Exception ex)
+{
+Debug.WriteLine(ex);
+}
+#else
+        catch
+        {
+            // The MAUI property setter is synchronous and cannot propagate
+            // asynchronous JavaScript interop failures to its caller.
+        }
+#endif
     }
 
     public DisplayInfo MainDisplayInfo => _display;
@@ -72,36 +97,44 @@ public sealed class BlazorDeviceDisplay : IDeviceDisplay, IAsyncDisposable
     // ───────────────────────── internals ─────────────────────────
     private Task? _ensureWatchingTask;
 
-    private void EnsureWatching()
+    private Task EnsureWatchingAsync()
     {
-        _ensureWatchingTask ??= EnsureWatchingAsync();
+        return EnsureWatchingCoreAsync();
     }
 
-    private async Task EnsureWatchingAsync()
+    private async Task EnsureWatchingCoreAsync()
     {
+        await _watchingLock.WaitAsync().ConfigureAwait(false);
+
         try
         {
-            if (_watching) return;
-            _watching = true;
-            _ref?.Dispose();
-            _ref = DotNetObjectReference.Create(this);
-            await BlazorEssentials.Module.InvokeVoidAsync("ddSubscribe", _ref);
-        }        
-#if DEBUG
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex);
-        }
-#else
-        catch
-        {
+            if (_watching)
+                return;
 
+            _ref ??= DotNetObjectReference.Create(this);
+
+            try
+            {
+                await BlazorEssentials.Module.InvokeVoidAsync(
+                    "ddSubscribe", _ref).ConfigureAwait(false);
+
+                // Only report success after the subscription completes.
+                _watching = true;
+            }
+            catch
+            {
+                // A failed subscription must be retryable.
+                _watching = false;
+                _ref.Dispose();
+                _ref = null;
+                throw;
+            }
         }
-#endif
         finally
         {
-            _ensureWatchingTask = null;
+            _watchingLock.Release();
         }
+
     }
 
     private async Task SetWakeLockAsync(bool on)
