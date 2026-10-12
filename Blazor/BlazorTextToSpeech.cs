@@ -28,25 +28,9 @@ public class BlazorTextToSpeech : ITextToSpeech
         cancelToken.ThrowIfCancellationRequested();
 
         try
-        { 
-            using var registration = cancelToken.CanBeCanceled
-                ? cancelToken.Register(async () => {
-                    try
-                    {
-                        await BlazorEssentials.Module.InvokeVoidAsync("speechCancel");
-                    }
-#if DEBUG
-        catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine(ex);
-        }
-#else
-                    catch
-                    {
-
-                    }
-#endif
-                })
+            using var registration = cancelToken.CanBeCanceled
+                ? cancelToken.Register(static state => ((BlazorTextToSpeech)state!).RequestSpeechCancellation(), this)
                 : default;
 
             await BlazorEssentials.Module.InvokeVoidAsync("speak", text,
@@ -71,5 +55,33 @@ public class BlazorTextToSpeech : ITextToSpeech
         }
 #endif
         cancelToken.ThrowIfCancellationRequested();
+    }
+
+    private void RequestSpeechCancellation()
+    {
+        // CancellationToken.Register accepts an Action, so this callback
+        // must remain synchronous. The helper observes its own failures.
+        _ = CancelSpeechSafelyAsync();
+    }
+
+    private static async Task CancelSpeechSafelyAsync()
+    {
+        try
+        {
+            await BlazorEssentials.Module
+                .InvokeVoidAsync("speechCancel")
+                .ConfigureAwait(false);
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+#else
+        catch
+        {
+
+        }
+#endif
     }
 }
