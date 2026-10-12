@@ -4,7 +4,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\Blazor\**\*.cs" Visible="false" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(AvaeFeatures.Contains(';AVALONIA;'))">
+  <ItemGroup Condition="'$(UseAvae)' == 'true'">
     <PackageReference Include="Avalonia.Controls.Maui.Essentials" Version="11.0.0-rc.1.26252.343" />
     <PackageReference Include="WindowsContracts.Net.Foundation.UniversalApiContract" Version="5.19041.10">
       <PrivateAssets>compile</PrivateAssets>

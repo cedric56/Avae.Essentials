@@ -9,7 +9,6 @@
       net11.0-macos;
       net11.0-windows10.0.19041
     </TargetFrameworks>
-    <!--<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>-->
     <Nullable>enable</Nullable>
     <IsLinuxOS Condition="$([MSBuild]::IsOSPlatform('linux'))">true</IsLinuxOS>
     <IsWindowsOS>$([MSBuild]::IsOSPlatform('windows'))</IsWindowsOS>
@@ -66,6 +65,5 @@
  
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Essentials" Version="11.0.0-rc.1.26451.6" />
-    <!--<PackageReference Include="Microsoft.JSInterop" />-->
   </ItemGroup>
 </Project>
