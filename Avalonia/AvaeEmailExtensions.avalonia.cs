@@ -3,6 +3,7 @@ using Microsoft.Maui.ApplicationModel.Communication;
 using Microsoft.Maui.Storage;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -16,6 +17,71 @@ namespace Avae.Essentials;
 /// </summary>
 public static class AvaeEmailExtensions
 {
+
+    private const string CrLf = "\r\n";
+
+    private static void AppendLine(StringBuilder builder, string value = "")
+        => builder.Append(value).Append(CrLf);
+
+    private static string EncodeQuotedPrintable(string value)
+    {
+        var bytes = Encoding.UTF8.GetBytes(value);
+        var result = new StringBuilder();
+        var lineLength = 0;
+
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            var b = bytes[i];
+
+            // Normalize input newlines to CRLF without encoding them.
+            if (b == (byte)'\r' && i + 1 < bytes.Length &&
+                bytes[i + 1] == (byte)'\n')
+            {
+                result.Append(CrLf);
+                lineLength = 0;
+                i++;
+                continue;
+            }
+
+            if (b == (byte)'\r' || b == (byte)'\n')
+            {
+                result.Append(CrLf);
+                lineLength = 0;
+                continue;
+            }
+
+            var atLineEnd = i + 1 == bytes.Length ||
+                bytes[i + 1] == (byte)'\r' ||
+                bytes[i + 1] == (byte)'\n';
+
+            string token;
+
+            if ((b >= 33 && b <= 60) || (b >= 62 && b <= 126))
+            {
+                token = ((char)b).ToString();
+            }
+            else if ((b == (byte)' ' || b == (byte)'\t') && !atLineEnd)
+            {
+                token = ((char)b).ToString();
+            }
+            else
+            {
+                token = $"={b:X2}";
+            }
+
+            // Leave room for the soft line break '='.
+            if (lineLength + token.Length > 75)
+            {
+                result.Append('=').Append(CrLf);
+                lineLength = 0;
+            }
+
+            result.Append(token);
+            lineLength += token.Length;
+        }
+
+        return result.ToString();
+    }
 
     /// <summary>
     /// Converts an <see cref="EmailMessage"/> to a <c>mailto:</c> URI string.
@@ -94,7 +160,7 @@ public static class AvaeEmailExtensions
         if (!string.IsNullOrWhiteSpace(message.Subject))
             builder.AppendLine($"Subject: {EncodeSubject(message.Subject)}");
 
-        builder.AppendLine($"Date: {DateTime.Now.ToString("R")}");
+        AppendLine(builder, $"Date: {DateTimeOffset.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss '+0000'", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"MIME-Version: 1.0");
         builder.AppendLine($"X-Unsent: 1");
 
@@ -132,7 +198,8 @@ public static class AvaeEmailExtensions
                 builder.AppendLine($"Content-Type: {encoding}; charset=utf-8");
                 builder.AppendLine($"Content-Transfer-Encoding: quoted-printable");
                 builder.AppendLine();
-                builder.AppendLine(message.Body);
+                builder.Append(EncodeQuotedPrintable(message.Body));
+                AppendLine(builder);
                 builder.AppendLine();
             }
             builder.AppendLine($"--{altBoundary}--");
@@ -173,14 +240,27 @@ public static class AvaeEmailExtensions
                     using var base64Stream = new CryptoStream(stream, new ToBase64Transform(), CryptoStreamMode.Read);
 
                     var buffer = new byte[4096];
+                    var lineLength = 0;
                     int bytesRead;
+
                     while ((bytesRead = await base64Stream.ReadAsync(buffer)) > 0)
                     {
-                        builder.Append(Encoding.ASCII.GetString(buffer, 0, bytesRead));
-                        if (builder.Length % 76 == 0) // Proper base64 line wrapping
-                            builder.AppendLine();
+                        for (var i = 0; i < bytesRead; i++)
+                        {
+                            builder.Append((char)buffer[i]);
+
+                            if (++lineLength == 76)
+                            {
+                                AppendLine(builder);
+                                lineLength = 0;
+                            }
+                        }
                     }
-                    builder.AppendLine();
+
+                    if (lineLength > 0)
+                        AppendLine(builder);
+
+                    AppendLine(builder);
                 }
             }
 
@@ -192,7 +272,8 @@ public static class AvaeEmailExtensions
             // Simple text message
             builder.AppendLine($"Content-Transfer-Encoding: quoted-printable");
             builder.AppendLine();
-            builder.AppendLine(message.Body);
+            builder.Append(EncodeQuotedPrintable(message.Body));
+            AppendLine(builder);
         }
 
         return builder.ToString();
