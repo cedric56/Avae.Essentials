@@ -113,80 +113,158 @@ namespace Avae.Essentials;
                 localSettings.CreateContainer(name, ApplicationDataCreateDisposition.Always);
             return localSettings.Containers[name];
         }
-    }
+}
 
-class OriginalUnpackagedSecureStorageImplementation : ISecureStorageImplementation
+class OriginalUnpackagedSecureStorageImplementation
+    : ISecureStorageImplementation
 {
-    static readonly string AppSecureStoragePath = Path.Combine(FileSystem.AppDataDirectory, "..", "Settings", "securestorage.dat");
+    private static readonly string AppSecureStoragePath =
+        Path.Combine(
+            FileSystem.AppDataDirectory,
+            "..",
+            "Settings",
+            "securestorage.dat");
 
-    readonly SecureStorageDictionary _secureStorage = new();
+    private readonly object _gate = new();
+    private readonly SecureStorageDictionary _secureStorage = new();
 
     public OriginalUnpackagedSecureStorageImplementation()
     {
         Load();
     }
 
-    void Load()
+    private void Load()
     {
-        if (!File.Exists(AppSecureStoragePath))
-            return;
-
-        try
+        lock (_gate)
         {
-            using var stream = File.OpenRead(AppSecureStoragePath);
+            if (!File.Exists(AppSecureStoragePath))
+                return;
 
-            var readPreferences = JsonSerializer.Deserialize(stream, SecureStorageJsonSerializerContext.Default.SecureStorageDictionary);
-
-            if (readPreferences != null)
+            try
             {
+                using var stream = File.OpenRead(AppSecureStoragePath);
+
+                var loaded = JsonSerializer.Deserialize(
+                    stream,
+                    SecureStorageJsonSerializerContext.Default
+                        .SecureStorageDictionary);
+
+                if (loaded is null)
+                    return;
+
                 _secureStorage.Clear();
-                foreach (var pair in readPreferences)
-                    _secureStorage.TryAdd(pair.Key, pair.Value);
+
+                foreach (var pair in loaded)
+                    _secureStorage[pair.Key] = pair.Value;
             }
-        }
-        catch (JsonException)
-        {
-            // if deserialization fails proceed with empty settings
+            catch (JsonException)
+            {
+                // Preserve the original file. Do not overwrite corrupt data
+                // until the application has a recovery strategy.
+            }
+            catch (IOException)
+            {
+                // Handle inaccessible storage according to your API policy.
+            }
         }
     }
 
-    void Save()
+    private void Save()
     {
-        var dir = Path.GetDirectoryName(AppSecureStoragePath);
-        if (dir == null)
-            return;
-        Directory.CreateDirectory(dir);
-        using var stream = File.Create(AppSecureStoragePath);
-        JsonSerializer.Serialize(stream, _secureStorage, SecureStorageJsonSerializerContext.Default.SecureStorageDictionary);
+        var directory = Path.GetDirectoryName(AppSecureStoragePath);
+        if (directory is null)
+            throw new IOException("Secure storage directory is unavailable.");
+
+        Directory.CreateDirectory(directory);
+
+        var tempPath = AppSecureStoragePath + "." +
+                       Guid.NewGuid().ToString("N") + ".tmp";
+
+        try
+        {
+            using (var stream = new FileStream(
+                tempPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None))
+            {
+                JsonSerializer.Serialize(
+                    stream,
+                    _secureStorage,
+                    SecureStorageJsonSerializerContext.Default
+                        .SecureStorageDictionary);
+
+                stream.Flush(flushToDisk: true);
+            }
+
+            // Same-directory replacement avoids exposing a partially
+            // serialized destination file.
+            File.Move(tempPath, AppSecureStoragePath, overwrite: true);
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (IOException)
+            {
+                // Best-effort cleanup of abandoned temporary files.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Best-effort cleanup.
+            }
+        }
     }
 
     public Task<byte[]?> GetAsync(string key)
     {
-        _secureStorage.TryGetValue(key, out var value);
-        return Task.FromResult(value);
+        lock (_gate)
+        {
+            _secureStorage.TryGetValue(key, out var value);
+            return Task.FromResult(value);
+        }
     }
 
     public Task SetAsync(string key, byte[] value)
     {
-        if (value is null)
-            _secureStorage.TryRemove(key, out _);
-        else
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(value);
+
+        lock (_gate)
+        {
             _secureStorage[key] = value;
-        Save();
+            Save();
+        }
+
         return Task.CompletedTask;
     }
 
     public bool Remove(string key)
     {
-        var result = _secureStorage.TryRemove(key, out _);
-        Save();
-        return result;
+        lock (_gate)
+        {
+            var removed = _secureStorage.TryRemove(key, out _);
+
+            if (removed)
+                Save();
+
+            return removed;
+        }
     }
 
     public void RemoveAll()
     {
-        _secureStorage.Clear();
-        Save();
+        lock (_gate)
+        {
+            if (_secureStorage.IsEmpty)
+                return;
+
+            _secureStorage.Clear();
+            Save();
+        }
     }
 }
 
