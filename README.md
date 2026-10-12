@@ -26,13 +26,13 @@ Contracts stay aligned with `Microsoft.Maui.Essentials` (`IGeolocation`, `IClipb
 
 ```xml
 <PropertyGroup>
-  <AvaeFeatures>$(AvaeFeatures);AVALONIA;</AvaeFeatures>
+  <UseAvae>true</UseAvae>
 </PropertyGroup>
 ```
 
 Blazor sources are included automatically when the Web / Blazor WebAssembly SDK is used.
 
-**Host apps** that call `UseAvaloniaEssentials()` must restore **Avalonia** and **Avalonia.Controls.Maui.Essentials** at runtime (the library may use `PrivateAssets=compile` so pure ViewModel projects are not forced to take Avalonia).
+**Host apps** that call `UseAvaeEssentials()` must restore **Avalonia** and **Avalonia.Controls.Maui.Essentials** at runtime (the library may use `PrivateAssets=compile` so pure ViewModel projects are not forced to take Avalonia).
 
 ---
 
@@ -47,7 +47,7 @@ services.UseAvaloniaEssentials();
 ### Blazor
 
 ```csharp
-services.UseBlazorEssentials();
+services.UseAvaeBlazorEssentials();
 ```
 
 `BlazorEssentials.js` is automatically copied in `wwwroot`, and call `InitializeAsync()`.
@@ -65,7 +65,7 @@ async provider =>
 ### MAUI-only
 
 ```csharp
-services.RegisterEssentials();
+services.RegisterAvaeEssentials();
 ```
 
 ---
