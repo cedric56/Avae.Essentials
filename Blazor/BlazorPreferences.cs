@@ -181,4 +181,64 @@ public sealed class BlazorPreferences : IPreferences
             gate.Release();
         }
     }
+
+    private void TrackPersistence(Func<Task> operation)
+    {
+        lock (_pendingLock)
+        {
+            var id = ++_nextOperationId;
+            var task = ExecutePersistenceAsync(operation);
+
+            _pending.Add(id, task);
+
+            _ = task.ContinueWith(
+                _ =>
+                {
+                    lock (_pendingLock)
+                        _pending.Remove(id);
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+    }
+
+    private async Task ExecutePersistenceAsync(Func<Task> operation)
+    {
+        try
+        {
+            await operation().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Includes JSDisconnectedException. The failure is observed
+            // here and reported to callers through FlushAsync().
+            _persistenceErrors.Enqueue(ex);
+        }
+    }
+
+    /// <summary>
+    /// Waits for persistence operations pending when this method is called.
+    /// Throws if any persistence operations have failed since the last
+    /// successful error-draining call.
+    /// </summary>
+    public async Task FlushAsync()
+    {
+        Task[] pending;
+
+        lock (_pendingLock)
+            pending = _pending.Values.ToArray();
+
+        await Task.WhenAll(pending).ConfigureAwait(false);
+
+        var errors = new List<Exception>();
+
+        while (_persistenceErrors.TryDequeue(out var error))
+            errors.Add(error);
+
+        if (errors.Count > 0)
+            throw new AggregateException(
+                "One or more browser preference persistence operations failed.",
+                errors);
+    }
 }

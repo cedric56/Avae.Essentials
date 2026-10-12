@@ -90,12 +90,12 @@ Debug.WriteLine(ex);
 
     public event EventHandler<DisplayInfoChangedEventArgs>? MainDisplayInfoChanged
     {
-        add { EnsureWatching(); _mainDisplayInfoChanged += value; }
+        add { _ = EnsureWatchingAsync(); _mainDisplayInfoChanged += value; }
         remove => _mainDisplayInfoChanged -= value;
     }
 
     // ───────────────────────── internals ─────────────────────────
-    private Task? _ensureWatchingTask;
+    //private Task? _ensureWatchingTask;
 
     private Task EnsureWatchingAsync()
     {
@@ -139,7 +139,7 @@ Debug.WriteLine(ex);
 
     private async Task SetWakeLockAsync(bool on)
     {
-        EnsureWatching();
+        await EnsureWatchingAsync();
         try
         { 
             await BlazorEssentials.Module.InvokeVoidAsync("ddSetWakeLock", _ref, on);
